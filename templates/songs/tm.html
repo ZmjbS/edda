@@ -1,0 +1,13 @@
+<html>
+<body>
+<table>
+{% for row in transition_matrix %}
+<tr style="height: 1em;">
+	{% for num in row %}
+		<td style="width: 1.3em; text-align: right; {% if num != 0 %}background-color: yellow;{% endif %}">{{ num }}</td>
+	{% endfor %}
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>
