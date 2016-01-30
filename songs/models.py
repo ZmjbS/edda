@@ -12,7 +12,7 @@ class Song(models.Model):
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()
 
-	phrase = models.ManyToManyField(Phrase,through='Sequence', through_fields=('song', 'phrase'))
+	phrase = models.ManyToManyField(Phrase,through='SongPhrase', through_fields=('song', 'phrase'))
 
 	def __str__(self):
 		phrasestring = ''
@@ -20,9 +20,9 @@ class Song(models.Model):
 			phrasestring += ', '+str(phrase)
 		return self.soundfile + '-' + self.singer + ':' + phrasestring[1:]
 
-class Sequence(models.Model):
+class SongPhrase(models.Model):
 	song = models.ForeignKey(Song)
-	phrase = models.ForeignKey(Phrase, related_name='sequences')
+	phrase = models.ForeignKey(Phrase, related_name='songs')
 	is_transition = models.BooleanField(default=False)
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
-from songs.models import Song, Phrase, Sequence
+from songs.models import Song, Phrase, SongPhrase
 from .forms import UploadFileForms
 from django.views.decorators.csrf import csrf_exempt
 
@@ -26,8 +26,6 @@ def transition_matrix(songs, phrases=None):
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
 		phrase_list = list(song.phrase.all())
-		#phrase_list = list(song.phrase.order_by('time_begin'))
-		#phrase_list = list(song.sequence_set.order_by('time_begin'))
 		print(phrase_list)
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			tm[x.id-1][y.id-1] += c
@@ -58,7 +56,7 @@ def process_file(file):
 			song_begin = datetime.datetime.strptime('2014 12 30 15:00:42', '%Y %m %d %H:%M:%S')
 			song_end = song_begin + datetime.timedelta(0,600)
 			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
-			''' Now look up the phrase and create the corresponding sequence. '''
+			''' Now look up the phrase and create the corresponding song phrase. '''
 			p_string = data['Phrase'].split('->')
 			#print(p_string[0], type(p_string[0]))
 			try:
@@ -79,10 +77,9 @@ def process_file(file):
 			#print(phrase_begin, type(phrase_begin))
 			#print(phrase_end, type(phrase_end))
 			try:
-				sequence = Sequence.objects.create(song=song, phrase=phrase, transitions_to=transit, time_begin=phrase_begin, time_end=phrase_end)
-				#print(sequence)
+				sp = SongPhrase.objects.create(song=song, phrase=phrase, transitions_to=transit, time_begin=phrase_begin, time_end=phrase_end)
 			except:
-				print('Failed to create sequence')
+				print('Failed to create song phrase')
 	return 'f'
 
 @csrf_exempt
