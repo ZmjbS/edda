@@ -16,8 +16,13 @@ class Song(models.Model):
 
 	def __str__(self):
 		phrasestring = ''
-		for phrase in self.phrase.all():
-			phrasestring += ', '+str(phrase)
+		#for phrase in self.phrase.all():
+			#phrasestring += ', '+str(phrase)+str(phrase.is_transition)
+		for sp in self.songphrase_set.all():
+			if sp.is_transition:
+				phrasestring += ', ('+str(sp.phrase)+')'
+			else:
+				phrasestring += ', '+str(sp.phrase)
 		return self.soundfile + '-' + self.singer + ':' + phrasestring[1:]
 
 class SongPhrase(models.Model):

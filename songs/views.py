@@ -26,7 +26,6 @@ def transition_matrix(songs, phrases=None):
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
 		phrase_list = list(song.phrase.all())
-		print(phrase_list)
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			tm[x.id-1][y.id-1] += c
 
@@ -35,10 +34,12 @@ def transition_matrix(songs, phrases=None):
 def display_song_stuff(request):
 	
 	songs = Song.objects.all()
-	#print(songs)
 
 	tm = transition_matrix(songs)
 	print(tm)
+	maximum = max([max(l) for l in tm])
+	tmp = [[x*255/maximum for x in y] for y in tm ]
+	print(tmp)
 
 	phrases = Phrase.objects.all()
 
@@ -52,34 +53,32 @@ def process_file(file):
 	with open('tmp.txt', 'r') as datafile:
 		#for fields in csv.reader(datafile, delimiter='\t'):
 		for data in csv.DictReader(datafile, delimiter='\t'):
-			''' Begin with getting or creating the song '''
-			song_begin = datetime.datetime.strptime('2014 12 30 15:00:42', '%Y %m %d %H:%M:%S')
-			song_end = song_begin + datetime.timedelta(0,600)
-			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
-			''' Now look up the phrase and create the corresponding song phrase. '''
-			p_string = data['Phrase'].split('->')
-			#print(p_string[0], type(p_string[0]))
-			try:
-				phrase = Phrase.objects.get(name=p_string[0])
-			except:
-				print('Could not retrieve phrase object. No phrase named x'+p_string[0]+'x')
-			try:
-				#transit = Phrase.objects.get(name=p_string[1]) if len(p_string) > 0 else None
-				transit = None
-			except:
-				print('Could not retrieve transition object. No phrase named '+p_string[0])
-			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
-			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
+			if data['Phrase'] != 'Phrase':
 
-			#print(song, type(song))
-			#print(phrase, type(phrase))
-			#print(transit, type(transit))
-			#print(phrase_begin, type(phrase_begin))
-			#print(phrase_end, type(phrase_end))
-			try:
-				sp = SongPhrase.objects.create(song=song, phrase=phrase, transitions_to=transit, time_begin=phrase_begin, time_end=phrase_end)
-			except:
-				print('Failed to create song phrase')
+				''' Begin with getting or creating the song '''
+				song_begin = datetime.datetime.strptime('2014 12 30 15:00:42', '%Y %m %d %H:%M:%S')
+				song_end = song_begin + datetime.timedelta(0,600)
+				song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
+
+				''' Now look up the phrase and create the corresponding song phrase. '''
+				phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
+				phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
+
+				phrasenames = []
+				phrasenames = data['Phrase'].split('->')
+				for phrasename in phrasenames:
+					try:
+						phrase = Phrase.objects.get(name=phrasename.strip())
+					except:
+						print('Could not retrieve phrase object. No phrase named x'+phrasename.strip()+'x')
+				try:
+					print(len(phrasenames))
+					if len(phrasenames) == 1:
+						sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
+					else:
+						sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
+				except:
+					print('Failed to create song phrase')
 	return 'f'
 
 @csrf_exempt
@@ -88,7 +87,8 @@ def upload_file(request):
 		form = UploadFileForms(request.POST, request.FILES)
 		if form.is_valid():
 			process_file(request.FILES['file'])
-			return HttpResponseRedirect('/songs/file/'+request.POST['filename'])
+			#return HttpResponseRedirect('/songs/file/'+request.POST['filename'])
+			return HttpResponseRedirect('/songs/')
 	else:
 		form = UploadFileForms()
 	return render(request, 'songs/upload.html', { 'form': form })
