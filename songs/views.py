@@ -22,7 +22,8 @@ def transition_matrix(songs, phrases=None):
 
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
-		phrase_list = list(song.phrase.all())
+		#phrase_list = list(song.phrase.all())
+		phrase_list = list(song.phrase.order_by('time_begin'))
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			tm[x.id-1][y.id-1] += c
 

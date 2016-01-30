@@ -12,7 +12,7 @@ class Song(models.Model):
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()
 
-	phrase = models.ManyToManyField(Phrase,through='Sequence')
+	phrase = models.ManyToManyField(Phrase,through='Sequence', through_fields=('song', 'phrase'))
 
 	def __str__(self):
 		phrasestring = ''
@@ -22,8 +22,11 @@ class Song(models.Model):
 
 class Sequence(models.Model):
 	song = models.ForeignKey(Song)
-	phrase = models.ForeignKey(Phrase)
-	order = models.PositiveSmallIntegerField()
+	phrase = models.ForeignKey(Phrase, related_name='sequences')
+	transitions_to = models.ForeignKey(Phrase, related_name='transitions', blank=True, null=True, db_column='transition')
+	comment = models.TextField(blank=True, null=True)
+	time_begin = models.DateTimeField()
+	time_end = models.DateTimeField()
 
-	class Meta:
-		unique_together = ('order', 'song',)
+#	class Meta:
+#		unique_together = ('order', 'song',)
