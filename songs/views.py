@@ -1,6 +1,8 @@
 from django.shortcuts import render
-from songs.models import Song, Phrase
+from django.http import HttpResponseRedirect
+from songs.models import Song, Phrase, Sequence
 from .forms import UploadFileForms
+from django.views.decorators.csrf import csrf_exempt
 
 def transition_matrix(songs, phrases=None):
 
@@ -44,12 +46,52 @@ def display_song_stuff(request):
 
 	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, })
 
+def process_file(file):
+	import csv, datetime
+	with open('tmp.txt', 'wb+') as destination:
+		for chunk in file.chunks():
+			destination.write(chunk)
+	with open('tmp.txt', 'r') as datafile:
+		#for fields in csv.reader(datafile, delimiter='\t'):
+		for data in csv.DictReader(datafile, delimiter='\t'):
+			''' Begin with getting or creating the song '''
+			song_begin = datetime.datetime.strptime('2014 12 30 15:00:42', '%Y %m %d %H:%M:%S')
+			song_end = song_begin + datetime.timedelta(0,600)
+			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
+			''' Now look up the phrase and create the corresponding sequence. '''
+			p_string = data['Phrase'].split('->')
+			#print(p_string[0], type(p_string[0]))
+			try:
+				phrase = Phrase.objects.get(name=p_string[0])
+			except:
+				print('Could not retrieve phrase object. No phrase named x'+p_string[0]+'x')
+			try:
+				#transit = Phrase.objects.get(name=p_string[1]) if len(p_string) > 0 else None
+				transit = None
+			except:
+				print('Could not retrieve transition object. No phrase named '+p_string[0])
+			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
+			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
+
+			#print(song, type(song))
+			#print(phrase, type(phrase))
+			#print(transit, type(transit))
+			#print(phrase_begin, type(phrase_begin))
+			#print(phrase_end, type(phrase_end))
+			try:
+				sequence = Sequence.objects.create(song=song, phrase=phrase, transitions_to=transit, time_begin=phrase_begin, time_end=phrase_end)
+				#print(sequence)
+			except:
+				print('Failed to create sequence')
+	return 'f'
+
+@csrf_exempt
 def upload_file(request):
 	if request.method == 'POST':
-		form = UploadFileForm(request.POST, request.FILES)
+		form = UploadFileForms(request.POST, request.FILES)
 		if form.is_valid():
-			proess_file(request.FILES['file'])
-			return HttpResponseRedirect('songs/file/'+request.POST['filename'])
+			process_file(request.FILES['file'])
+			return HttpResponseRedirect('/songs/file/'+request.POST['filename'])
 	else:
-		form = UploadFileForm()
+		form = UploadFileForms()
 	return render(request, 'songs/upload.html', { 'form': form })
