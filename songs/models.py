@@ -23,10 +23,10 @@ class Song(models.Model):
 class Sequence(models.Model):
 	song = models.ForeignKey(Song)
 	phrase = models.ForeignKey(Phrase, related_name='sequences')
-	transitions_to = models.ForeignKey(Phrase, related_name='transitions', blank=True, null=True, db_column='transition')
-	comment = models.TextField(blank=True, null=True)
+	is_transition = models.BooleanField(default=False)
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()
+	comment = models.TextField(blank=True, null=True)
 
 #	class Meta:
 #		unique_together = ('order', 'song',)
