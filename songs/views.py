@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from songs.models import Song, Phrase
+from .forms import UploadFileForms
 
 def transition_matrix(songs, phrases=None):
 
@@ -22,8 +23,10 @@ def transition_matrix(songs, phrases=None):
 
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
-		#phrase_list = list(song.phrase.all())
-		phrase_list = list(song.phrase.order_by('time_begin'))
+		phrase_list = list(song.phrase.all())
+		#phrase_list = list(song.phrase.order_by('time_begin'))
+		#phrase_list = list(song.sequence_set.order_by('time_begin'))
+		print(phrase_list)
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			tm[x.id-1][y.id-1] += c
 
@@ -40,3 +43,13 @@ def display_song_stuff(request):
 	phrases = Phrase.objects.all()
 
 	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, })
+
+def upload_file(request):
+	if request.method == 'POST':
+		form = UploadFileForm(request.POST, request.FILES)
+		if form.is_valid():
+			proess_file(request.FILES['file'])
+			return HttpResponseRedirect('songs/file/'+request.POST['filename'])
+	else:
+		form = UploadFileForm()
+	return render(request, 'songs/upload.html', { 'form': form })

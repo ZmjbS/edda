@@ -1,8 +1,16 @@
 <html>
 <body>
 <table>
+<tr>
+	<th></th>
+	{% for phrase in phrases %}
+	<th>{{ phrase }}</th>
+	{% endfor %}
+</tr>
+{% load index %}
 {% for row in transition_matrix %}
 <tr style="height: 1em;">
+	<th>{{ phrases | index:forloop.counter0 }}</th>
 	{% for num in row %}
 		<td style="width: 1.3em; text-align: right; {% if num != 0 %}background-color: yellow;{% endif %}">{{ num }}</td>
 	{% endfor %}
