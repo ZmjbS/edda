@@ -75,4 +75,13 @@
   <object model="songs.phrase" pk="25">
     <field name="name" type="CharField">17</field>
   </object>
+  <object model="songs.phrase" pk="26">
+    <field name="name" type="CharField">18</field>
+  </object>
+  <object model="songs.phrase" pk="27">
+    <field name="name" type="CharField">19</field>
+  </object>
+  <object model="songs.phrase" pk="28">
+    <field name="name" type="CharField">20</field>
+  </object>
 </django-objects>
