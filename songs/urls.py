@@ -18,6 +18,6 @@ from django.contrib import admin
 from songs.views import display_song_stuff, upload_file
 
 urlpatterns = [
-    url(r'^', display_song_stuff),
-    url(r'upload^', upload_file),
+    url(r'^$', display_song_stuff),
+    url(r'^upload/$', upload_file),
 ]
