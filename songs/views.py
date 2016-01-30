@@ -1,5 +1,8 @@
 from django.shortcuts import render
-from songs.models import Song, Phrase
+from django.http import HttpResponseRedirect
+from songs.models import Song, Phrase, SongPhrase
+from .forms import UploadFileForms
+from django.views.decorators.csrf import csrf_exempt
 
 def transition_matrix(songs, phrases=None):
 
@@ -22,8 +25,7 @@ def transition_matrix(songs, phrases=None):
 
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
-		#phrase_list = list(song.phrase.all())
-		phrase_list = list(song.phrase.order_by('time_begin'))
+		phrase_list = list(song.phrase.all())
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			tm[x.id-1][y.id-1] += c
 
@@ -32,11 +34,77 @@ def transition_matrix(songs, phrases=None):
 def display_song_stuff(request):
 	
 	songs = Song.objects.all()
-	#print(songs)
 
 	tm = transition_matrix(songs)
 	print(tm)
+	maximum = max([max(l) for l in tm])
+	import math
+
+	''' Create colourised output.'''
+	rgb = []
+	for row in tm:
+		rmax = max(row)
+		rgbrow = []
+		for cell in row:
+			if rmax == 0:
+				red=0
+				green=0
+				blue=255
+			else:
+				red=int(cell*255/rmax)
+				green=int(cell*255/rmax)
+				blue=int(255-cell*255/rmax)
+			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
+		rgb.append(rgbrow)
 
 	phrases = Phrase.objects.all()
 
-	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, })
+	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
+
+def process_file(file):
+	import csv, datetime
+	with open('tmp.txt', 'wb+') as destination:
+		for chunk in file.chunks():
+			destination.write(chunk)
+	with open('tmp.txt', 'r') as datafile:
+		#for fields in csv.reader(datafile, delimiter='\t'):
+		for data in csv.DictReader(datafile, delimiter='\t'):
+			if data['Phrase'] != 'Phrase':
+
+				''' Begin with getting or creating the song '''
+				song_begin = datetime.datetime.strptime('2014 12 30 15:00:42', '%Y %m %d %H:%M:%S')
+				song_end = song_begin + datetime.timedelta(0,600)
+				song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
+
+				''' Now look up the phrase and create the corresponding song phrase. '''
+				phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
+				phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
+
+				phrasenames = []
+				phrasenames = data['Phrase'].split('->')
+				for phrasename in phrasenames:
+					try:
+						phrase = Phrase.objects.get(name=phrasename.strip())
+					except:
+						print('Could not retrieve phrase object. No phrase named x'+phrasename.strip()+'x')
+				try:
+					print(len(phrasenames))
+					if len(phrasenames) == 1:
+						sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
+					else:
+						sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
+				except:
+					print('Failed to create song phrase')
+	return 'f'
+
+@csrf_exempt
+def upload_file(request):
+	if request.method == 'POST':
+		form = UploadFileForms(request.POST, request.FILES)
+		if form.is_valid():
+			process_file(request.FILES['file'])
+			#return HttpResponseRedirect('/songs/file/'+request.POST['filename'])
+			return HttpResponseRedirect('/songs/')
+	else:
+		form = UploadFileForms()
+	return render(request, 'songs/upload.html', { 'form': form })
