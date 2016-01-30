@@ -1,0 +1,48 @@
+[
+{
+  "model": "songs.song",
+  "pk": 1,
+  "fields": {
+    "soundfile": "2452.wav",
+    "singer": "A",
+    "time_begin": "2016-01-30T00:21:05Z",
+    "time_end": "2016-01-30T00:22:15Z"
+  }
+},
+{
+  "model": "songs.sequence",
+  "pk": 1,
+  "fields": {
+    "song": 1,
+    "phrase": 6,
+    "transitions_to": null,
+    "comment": "",
+    "time_begin": "2016-01-30T00:21:11Z",
+    "time_end": "2016-01-30T00:21:13Z"
+  }
+},
+{
+  "model": "songs.sequence",
+  "pk": 2,
+  "fields": {
+    "song": 1,
+    "phrase": 3,
+    "transitions_to": 13,
+    "comment": "",
+    "time_begin": "2016-01-30T00:21:56Z",
+    "time_end": "2016-01-30T00:21:58Z"
+  }
+},
+{
+  "model": "songs.sequence",
+  "pk": 3,
+  "fields": {
+    "song": 1,
+    "phrase": 13,
+    "transitions_to": 17,
+    "comment": "",
+    "time_begin": "2016-01-30T00:22:10Z",
+    "time_end": "2016-01-30T00:22:12Z"
+  }
+}
+]

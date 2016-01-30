@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<django-objects version="1.0">
+  <object model="songs.song" pk="1">
+    <field name="soundfile" type="CharField">2452.wav</field>
+    <field name="singer" type="CharField">A</field>
+    <field name="time_begin" type="DateTimeField">2016-01-30T00:21:05+00:00</field>
+    <field name="time_end" type="DateTimeField">2016-01-30T00:22:15+00:00</field>
+  </object>
+  <object model="songs.sequence" pk="1">
+    <field name="song" rel="ManyToOneRel" to="songs.song">1</field>
+    <field name="phrase" rel="ManyToOneRel" to="songs.phrase">6</field>
+    <field name="transitions_to" rel="ManyToOneRel" to="songs.phrase"><None></None></field>
+    <field name="comment" type="TextField"></field>
+    <field name="time_begin" type="DateTimeField">2016-01-30T00:21:11+00:00</field>
+    <field name="time_end" type="DateTimeField">2016-01-30T00:21:13+00:00</field>
+  </object>
+  <object model="songs.sequence" pk="2">
+    <field name="song" rel="ManyToOneRel" to="songs.song">1</field>
+    <field name="phrase" rel="ManyToOneRel" to="songs.phrase">3</field>
+    <field name="transitions_to" rel="ManyToOneRel" to="songs.phrase">13</field>
+    <field name="comment" type="TextField"></field>
+    <field name="time_begin" type="DateTimeField">2016-01-30T00:21:56+00:00</field>
+    <field name="time_end" type="DateTimeField">2016-01-30T00:21:58+00:00</field>
+  </object>
+  <object model="songs.sequence" pk="3">
+    <field name="song" rel="ManyToOneRel" to="songs.song">1</field>
+    <field name="phrase" rel="ManyToOneRel" to="songs.phrase">13</field>
+    <field name="transitions_to" rel="ManyToOneRel" to="songs.phrase">17</field>
+    <field name="comment" type="TextField"></field>
+    <field name="time_begin" type="DateTimeField">2016-01-30T00:22:10+00:00</field>
+    <field name="time_end" type="DateTimeField">2016-01-30T00:22:12+00:00</field>
+  </object>
+</django-objects>
