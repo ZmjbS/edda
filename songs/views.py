@@ -38,12 +38,28 @@ def display_song_stuff(request):
 	tm = transition_matrix(songs)
 	print(tm)
 	maximum = max([max(l) for l in tm])
-	tmp = [[x*255/maximum for x in y] for y in tm ]
-	print(tmp)
+	import math
+
+	''' Create colourised output.'''
+	rgb = []
+	for row in tm:
+		rmax = max(row)
+		rgbrow = []
+		for cell in row:
+			if rmax == 0:
+				red=0
+				green=0
+				blue=255
+			else:
+				red=int(cell*255/rmax)
+				green=int(cell*255/rmax)
+				blue=int(255-cell*255/rmax)
+			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
+		rgb.append(rgbrow)
 
 	phrases = Phrase.objects.all()
 
-	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, })
+	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
 
 def process_file(file):
 	import csv, datetime
