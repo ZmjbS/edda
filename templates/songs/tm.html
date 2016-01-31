@@ -1,4 +1,13 @@
 <html>
+<head>
+<style>
+table { border-collapse: collapse; }
+td, th { width: 1.7em; height: 1.8em }
+td { text-align: center; }
+th:first-child { text-align: right; }
+th { background-color: #008; color: lightblue; }
+</style>
+</head>
 <body>
 <table>
 <tr>
@@ -9,10 +18,10 @@
 </tr>
 {% load index %}
 {% for row in transition_matrix %}
-<tr style="height: 1em;">
+<tr>
 	<th>{{ phrases | index:forloop.counter0 }}</th>
 	{% for num in row %}
-		<td style="width: 1.3em; text-align: right; background-color: {{ colour_matrix|index:forloop.parentloop.counter0|index:forloop.counter0 }};">{% if num != 0 %}{{ num }}{% endif %}</td>
+		<td style="background-color: {{ colour_matrix|index:forloop.parentloop.counter0|index:forloop.counter0 }};">{% if num != 0 %}{{ num }}{% endif %}</td>
 	{% endfor %}
 </tr>
 {% endfor %}

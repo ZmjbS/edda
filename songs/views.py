@@ -27,7 +27,8 @@ def transition_matrix(songs, phrases=None):
 	for song in songs:
 		phrase_list = list(song.phrase.all())
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
-			tm[x.id-1][y.id-1] += c
+			if x != y:
+				tm[x.id-1][y.id-1] += c
 
 	return tm
 
@@ -37,8 +38,12 @@ def display_song_stuff(request):
 
 	tm = transition_matrix(songs)
 	print(tm)
-	maximum = max([max(l) for l in tm])
-	import math
+	#maximum = max([max(l) for l in tm])
+	maximum = 0
+	for rn, row in enumerate(tm):
+		for cn, cell in enumerate(row):
+			if rn != cn and cell > maximum:
+				maximum = cell
 
 	''' Create colourised output.'''
 	rgb = []
@@ -52,7 +57,7 @@ def display_song_stuff(request):
 				blue=255
 			else:
 				red=int(cell*255/rmax)
-				green=int(cell*255/rmax)
+				green=int(cell*255/maximum)
 				blue=int(255-cell*255/rmax)
 			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
 		rgb.append(rgbrow)
