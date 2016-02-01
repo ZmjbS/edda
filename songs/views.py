@@ -1,34 +1,46 @@
 from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from songs.models import Song, Phrase, SongPhrase
 from .forms import UploadFileForms
 from django.views.decorators.csrf import csrf_exempt
+import numpy as np
 
 def transition_matrix(songs, phrases=None):
 
 	''' Takes a queryset of songs as an argument (and optionally phrases as
 	well) and returns a transition matrix for the phrases. '''
 
-
-	''' If we're not passed any phrases, just get them all. '''
-	if phrases == None:
-		phrases = Phrase.objects.all()
+	all_phrases = Phrase.objects.all()
 
 	''' Generate the transition matrix. Code taken from
 	  http://stackoverflow.com/questions/25269476/python-transition-matrix
-	  '''
+	'''
 	from collections import Counter
 
 	''' Set up the matrix of the right size. '''
-	tm_size = len(phrases)
-	tm = [[0 for _ in range(tm_size)] for _ in range(tm_size)]
+	tm_size = len(all_phrases)
+	#tm = [[0 for _ in range(tm_size)] for _ in range(tm_size)]
+	tm = np.zeros( (tm_size, tm_size) , dtype="int64")
 
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
 		phrase_list = list(song.phrase.all())
+		''' The zip command creates a list of tuples of the form
+		  (<Phrase: 13a>, <Phrase: 5>)
+		Counter then returns a dictionary with the tuple as key and the number
+		of times that the tuple appears in the list as the value:
+		  {(<Phrase: 13a>, (<Phrase: 5>): 4, ... }
+		'''
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			if x != y:
 				tm[x.id-1][y.id-1] += c
+
+	''' Remove unwanted phrases if any. '''
+	if phrases != None:
+		for phrase in all_phrases:
+			if phrase not in phrases:
+				tm = np.delete(tm, phrase.id, 0)
+				tm = np.delete(tm, phrase.id, 1)
 
 	return tm
 
@@ -36,6 +48,9 @@ def display_song_stuff(request):
 	
 	songs = Song.objects.all()
 
+	#all_phrases = list(Phrase.objects.all())
+	#phrases = all_phrases[0:0] + all_phrases[1:]
+	#tm = transition_matrix(songs, phrases)
 	tm = transition_matrix(songs)
 	print(tm)
 	#maximum = max([max(l) for l in tm])
@@ -70,7 +85,7 @@ def tm_to_json(request):
 	from django.http import JsonResponse
 	songs = Song.objects.all()
 	tm = transition_matrix(songs)
-	return JsonResponse(tm, safe=False)
+	return JsonResponse(tm.tolist(), safe=False)
 
 def process_file(file):
 	import csv, datetime
@@ -119,3 +134,15 @@ def upload_file(request):
 	else:
 		form = UploadFileForms()
 	return render(request, 'songs/upload.html', { 'form': form })
+
+def download_tm(request):
+	songs = Song.objects.all()
+	tm = transition_matrix(songs)
+	phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
+	print(phrases)
+	with open('tmp.txt', 'wb+') as destination:
+		np.savetxt(destination, tm, fmt='%i', delimiter='\t', header=phrases)
+	with open('tmp.txt', 'rb+') as destination:
+		response = HttpResponse(destination, content_type='text/plain')
+	response['Content-disposition'] = 'attachment; filename="prufa.txt"'
+	return response
