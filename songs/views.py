@@ -22,15 +22,20 @@ def transition_matrix(songs, phrases=None):
 	#tm = [[0 for _ in range(tm_size)] for _ in range(tm_size)]
 	tm = np.zeros( (tm_size, tm_size) , dtype="int64")
 
+	print(len(all_phrases))
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
 		phrase_list = list(song.phrase.all())
+		#phrase_list = list(song.phrase.filter(songs__is_transition=False))
 		''' The zip command creates a list of tuples of the form
 		  (<Phrase: 13a>, <Phrase: 5>)
 		Counter then returns a dictionary with the tuple as key and the number
 		of times that the tuple appears in the list as the value:
 		  {(<Phrase: 13a>, (<Phrase: 5>): 4, ... }
 		'''
+		start_phrase = Phrase.objects.get(name='start')
+		if start_phrase in phrase_list:
+			print('start')
 		for (x,y), c in Counter(zip(phrase_list, phrase_list[1:])).items():
 			if x != y:
 				tm[x.id-1][y.id-1] += c
@@ -41,6 +46,16 @@ def transition_matrix(songs, phrases=None):
 			if phrase not in phrases:
 				tm = np.delete(tm, phrase.id, 0)
 				tm = np.delete(tm, phrase.id, 1)
+
+	''' Remove unused rows and columns where none are used. '''
+	num = 0
+	for row in tm:
+		if not np.any(row!=0) and not np.any(tm[:,num]!=0):
+			print(num, row)
+			tm = np.delete(tm,num,0)
+			tm = np.delete(tm,num,1)
+		else:
+			num += 1
 
 	return tm
 
@@ -93,34 +108,25 @@ def process_file(file):
 		for chunk in file.chunks():
 			destination.write(chunk)
 	with open('tmp.txt', 'r') as datafile:
-		#for fields in csv.reader(datafile, delimiter='\t'):
 		for data in csv.DictReader(datafile, delimiter='\t'):
-			if data['Phrase'] != 'Phrase':
+			''' Begin with getting or creating the song '''
+			song_begin = datetime.datetime.strptime(data['Date']+'-'+data['Time'], '%d.%m.%Y-%H:%M:%S.%f')
+			song_end = song_begin + datetime.timedelta(0,600)
+			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
 
-				''' Begin with getting or creating the song '''
-				song_begin = datetime.datetime.strptime('2014 12 30 15:00:42', '%Y %m %d %H:%M:%S')
-				song_end = song_begin + datetime.timedelta(0,600)
-				song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end)
+			''' Now look up the phrase and create the corresponding song phrase. '''
+			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
+			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
 
-				''' Now look up the phrase and create the corresponding song phrase. '''
-				phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
-				phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
+			phrasenames = []
+			phrasenames = data['PhrasesForDatabase'].split('->')
+			for phrasename in phrasenames:
+				phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
 
-				phrasenames = []
-				phrasenames = data['Phrase'].split('->')
-				for phrasename in phrasenames:
-					try:
-						phrase = Phrase.objects.get(name=phrasename.strip())
-					except:
-						print('Could not retrieve phrase object. No phrase named x'+phrasename.strip()+'x')
-				try:
-					print(len(phrasenames))
-					if len(phrasenames) == 1:
-						sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
-					else:
-						sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
-				except:
-					print('Failed to create song phrase')
+				if len(phrasenames) == 1:
+					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
+				else:
+					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
 	return 'f'
 
 @csrf_exempt
