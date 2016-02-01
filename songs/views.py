@@ -66,6 +66,12 @@ def display_song_stuff(request):
 
 	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
 
+def tm_to_json(request):
+	from django.http import JsonResponse
+	songs = Song.objects.all()
+	tm = transition_matrix(songs)
+	return JsonResponse(tm, safe=False)
+
 def process_file(file):
 	import csv, datetime
 	with open('tmp.txt', 'wb+') as destination:

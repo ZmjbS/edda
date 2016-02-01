@@ -15,9 +15,10 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from songs.views import display_song_stuff, upload_file
+from songs.views import display_song_stuff, upload_file, tm_to_json
 
 urlpatterns = [
     url(r'^$', display_song_stuff),
     url(r'^upload/$', upload_file),
+    url(r'^api/tm/$', tm_to_json, name='tm_to_json'),
 ]
