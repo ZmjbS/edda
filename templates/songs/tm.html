@@ -2,20 +2,160 @@
 <head>
 <style>
 table { border-collapse: collapse; }
-td, th { width: 1.7em; height: 1.8em }
+td, th { min-width: 2.0em !important; max-width: 2.0em !important; height: 2.0em; overflow: hidden; }
 td { text-align: center; }
-th:first-child { text-align: right; }
+th:first-child { text-align: right; max-width: 100px !important; }
 th { background-color: #008; color: lightblue; }
-
+/* Chord CSS 
 .chord path {
   fill-opacity: .67;
   stroke: #000;
   stroke-width: .5px;
+} */
+
+.bar {
+	fill: steelblue;
+	shape-rendering: crispEdges;
 }
+.axis path, .axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
 </style>
 <script src="http://d3js.org/d3.v3.js"></script>
+</head>
+<body>
+<table style="float:left; max-width: calc(100% - 12em);">
+<tr>
+	<th></th>
+	{% for phrase in phrases %}
+	<th>{{ phrase }}{# forloop.counter0 #}</th>
+	{% endfor %}
+	<td style="min-width: 100px;"></td>
+</tr>
+{% load index %}
+{% for row in transition_matrix %}
+<tr>
+	<th>{{ phrases | index:forloop.counter0 }}<!--&nbsp;({{ forloop.counter0 }}) --></th>
+	{% for num in row %}
+		<td style="background-color: {{ colour_matrix|index:forloop.parentloop.counter0|index:forloop.counter0 }};">{% if num != 0 %}{{ num }}{% endif %}</td>
+	{% endfor %}
+</tr>
+{% endfor %}
+</table>
+<div style="float:left; width: 10em;">
+<ul>
+{% for phrase in phrases %}
+	<li>{{ phrase }}</li>
+{% endfor %}
+</ul>
+</div>
 <script>
+// For box plots: http://bl.ocks.org/mbostock/4061502
 
+/* Plot songs by date */
+/* Code borrowed from:
+	http://bl.ocks.org/sbrudz/ed6454e3d25640d19a41
+*/
+var margin = {top: 10, right: 30, bottom: 30, left: 50},
+	//width = 960 - margin.left - margin.right,
+	width = window.innerWidth - margin.left - margin.right,
+	height = 120 - margin.top - margin.bottom;
+
+//var parseDate = d3.time.format("%m/%d/%Y %I:%M:%S %p").parse;
+var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
+var formatDate = d3.time.format("%m/%y");
+var formatCount = d3.format(",.0f");
+
+var x = d3.time.scale().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(formatDate);
+var yAxis = d3.svg.axis().scale(y).orient("left").ticks(6);
+
+// Create the SVG drawing area
+var svg = d3.select("body")
+		  .append("svg")
+		  .attr("width", width + margin.left + margin.right)
+		  .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("{% url 'songs_to_json' %}",function(error,json){
+	// We receive the json as a string so we must parse it to a JSON object.
+	data = JSON.parse(json);
+
+	// Parse the date strings into javascript dates
+	data.forEach(function(d) {
+		//console.log(d['fields']['time_begin']);
+		d.created_date = parseDate(d['fields']['time_begin']);
+		//console.log(d.created_date)
+	});
+
+	// Determine the first and list dates in the data set
+	//var monthExtent = d3.extent(data, function(d) { return d.created_date; });
+	var dayExtent = d3.extent(data, function(d) { return d.created_date; });
+
+	// Create one bin per month, use an offset to include the first and last months
+	//var monthBins = d3.time.months(d3.time.month.offset(monthExtent[0],-1),
+	//                               d3.time.month.offset(monthExtent[1],1));
+	var dayBins = d3.time.days(d3.time.day.offset(dayExtent[0],-1),
+	                               d3.time.day.offset(dayExtent[1],1));
+
+	// Use the histogram layout to create a function that will bin the data
+	//var binByMonth = d3.layout.histogram()
+	//	               .value(function(d) { return d.created_date; })
+	//	               .bins(monthBins);
+	var binByDay = d3.layout.histogram()
+		               .value(function(d) { return d.created_date; })
+		               .bins(dayBins);
+
+	// Bin the data by month
+	//var histData = binByMonth(data);
+	var histData = binByDay(data);
+
+	// Scale the range of the data by setting the domain
+	//x.domain(d3.extent(monthBins));
+	x.domain(d3.extent(dayBins));
+	y.domain([0, d3.max(histData, function(d) { return d.y; })]);
+
+	// Set up one bar for each bin
+	// Months have slightly different lengths so calculate the width for each bin
+	// Note: dx, the width of the histogram bin, is in milliseconds so convert the x value
+	// into UTC time and convert the sum back to a date in order to help calculate the width
+	// Thanks to npdoty for pointing this out in this stack overflow post:
+	// http://stackoverflow.com/questions/17745682/d3-histogram-date-based
+	svg.selectAll(".bar")
+	   .data(histData)
+	   .enter().append("rect")
+	   .attr("class", "bar")
+	   .attr("x", function(d) { return x(d.x); })
+	   .attr("width", function(d) { return x(new Date(d.x.getTime() + d.dx))-x(d.x)-1; })
+	   .attr("y", function(d) { return y(d.y); })
+	   .attr("height", function(d) { return height - y(d.y); });
+
+	// Add the X Axis
+	svg.append("g")
+	   .attr("class", "x axis")
+	   .attr("transform", "translate(0," + height + ")")
+	   .call(xAxis);
+
+	// Add the Y Axis and label
+	svg.append("g")
+	   .attr("class", "y axis")
+	   .call(yAxis)
+	   .append("text")
+	   .attr("transform", "rotate(-90)")
+	   .attr("y", 6)
+	   .attr("dy", ".71em")
+	   .style("text-anchor", "end")
+	   .text("Number of Sightings");
+	
+});
+
+/*
 var data
 d3.json("{% url 'tm_to_json' %}",function(error,json){
 	data = json;
@@ -105,26 +245,8 @@ function fade(opacity) {
 }
 	
 })
+*/
 
 </script>
-</head>
-<body>
-<table>
-<tr>
-	<th></th>
-	{% for phrase in phrases %}
-	<th>{{ phrase }}</th>
-	{% endfor %}
-</tr>
-{% load index %}
-{% for row in transition_matrix %}
-<tr>
-	<th>{{ phrases | index:forloop.counter0 }}</th>
-	{% for num in row %}
-		<td style="background-color: {{ colour_matrix|index:forloop.parentloop.counter0|index:forloop.counter0 }};">{% if num != 0 %}{{ num }}{% endif %}</td>
-	{% endfor %}
-</tr>
-{% endfor %}
-</table>
 </body>
 </html>
