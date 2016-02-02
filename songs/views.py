@@ -18,7 +18,9 @@ def transition_matrix(songs, phrases=None):
 	from collections import Counter
 
 	''' Set up the matrix of the right size. '''
-	tm_size = len(all_phrases)
+	#tm_size = len(all_phrases)
+	# Set up the matrix to the maximum size.
+	tm_size = Phrase.objects.latest('id').id
 	#tm = [[0 for _ in range(tm_size)] for _ in range(tm_size)]
 	tm = np.zeros( (tm_size, tm_size) , dtype="int64")
 
@@ -54,10 +56,41 @@ def transition_matrix(songs, phrases=None):
 			print(num, row)
 			tm = np.delete(tm,num,0)
 			tm = np.delete(tm,num,1)
+			all_phrases = all_phrases[:num] + all_phrases[num+1:]
+			print(all_phrases)
 		else:
 			num += 1
 
-	return tm
+	''' Order the matrix. '''
+	neworder = np.zeros( len(all_phrases) )
+	# Move the Start to the start:
+	print(all_phrases)
+	print(type(all_phrases))
+	newidx = 0
+	oldidx = all_phrases.index(Phrase.objects.get(name='Start'))
+	neworder[newidx] = oldidx
+
+	# create a list of the order of the phrases:
+	'''
+	for i in neworder[1:]:
+		newidx += 1
+		countlist = list(tm[oldidx,:])
+		oldidx = countlist.index(max(countlist))
+
+		neworder[newidx] = oldidx
+		#neworder[newidx]= list(tm[oldidx,:]).index(max(list(tm[oldidx,:])))
+		#print(tm[num-1,:])
+		#neworder[num] = list(tm[num-1,:]).index(max(tm[num-1,:]))
+		#print(all_phrases.index(max(tm[num,:])))
+		num += 1
+		print(neworder)
+		'''
+	neworder = [ 3,  21, 18, 19, 4,  15, 16, 17, 5,  22, 23, 9,  0,  1,  2,  20,  6,  7,  10, 12, 11,  13, 14, 8 ]
+	tm = tm[neworder,:]
+	tm = tm[:,neworder]
+	all_phrases = [ all_phrases[i] for i in neworder ]
+
+	return tm, all_phrases
 
 def display_song_stuff(request):
 	
@@ -66,7 +99,7 @@ def display_song_stuff(request):
 	#all_phrases = list(Phrase.objects.all())
 	#phrases = all_phrases[0:0] + all_phrases[1:]
 	#tm = transition_matrix(songs, phrases)
-	tm = transition_matrix(songs)
+	tm, phrases = transition_matrix(songs)
 	print(tm)
 	#maximum = max([max(l) for l in tm])
 	maximum = 0
@@ -92,15 +125,23 @@ def display_song_stuff(request):
 			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
 		rgb.append(rgbrow)
 
-	phrases = Phrase.objects.all()
+	#phrases = Phrase.objects.all()
 
 	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
 
 def tm_to_json(request):
 	from django.http import JsonResponse
 	songs = Song.objects.all()
-	tm = transition_matrix(songs)
+	tm, phrases= transition_matrix(songs)
 	return JsonResponse(tm.tolist(), safe=False)
+
+def songs_to_json(request):
+	from django.http import JsonResponse
+	from django.core import serializers
+	songs = Song.objects.all()
+	#tm, phrases= transition_matrix(songs)
+	print(songs)
+	return JsonResponse(serializers.serialize('json', songs), safe=False)
 
 def process_file(file):
 	import csv, datetime
@@ -143,8 +184,9 @@ def upload_file(request):
 
 def download_tm(request):
 	songs = Song.objects.all()
-	tm = transition_matrix(songs)
-	phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
+	tm, phrases = transition_matrix(songs)
+	#phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
+	phrases = '\t'.join([ p.name for p in phrases ])
 	print(phrases)
 	with open('tmp.txt', 'wb+') as destination:
 		np.savetxt(destination, tm, fmt='%i', delimiter='\t', header=phrases)
