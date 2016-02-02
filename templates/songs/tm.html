@@ -54,6 +54,7 @@ th { background-color: #008; color: lightblue; }
 </div>
 <script>
 // For box plots: http://bl.ocks.org/mbostock/4061502
+// For the viridis colour map: https://gist.github.com/ekerstein/8235fbdc8b2a80c9c72f
 
 /* Plot songs by date */
 /* Code borrowed from:
@@ -248,5 +249,12 @@ function fade(opacity) {
 */
 
 </script>
+<div>
+<h1>Download</h1>
+<ul>
+	<li><a href="{% url 'download_transition_matrix' %}">Transition matrix</a></li>
+	<li><a href="{% url 'download_song_phrases' %}">Song phrases</a></li>
+</ul>
+</div>
 </body>
 </html>

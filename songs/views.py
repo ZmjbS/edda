@@ -194,3 +194,25 @@ def download_tm(request):
 		response = HttpResponse(destination, content_type='text/plain')
 	response['Content-disposition'] = 'attachment; filename="prufa.txt"'
 	return response
+
+def download_song_phrases(request):
+	songs = Song.objects.all()
+	#tm, phrases = transition_matrix(songs)
+	#phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
+	#phrases = '\t'.join([ p.name for p in phrases ])
+	#print(phrases)
+	songlist = []
+	for song in songs:
+		phrasestring = song.soundfile+'-'+song.singer
+		for sp in song.songphrase_set.all():
+			phrasestring += '\t'+sp.phrase.name
+		songlist.append(phrasestring)
+	songlist = np.array(songlist)
+	print(songlist)
+	with open('tmp.txt', 'wb+') as destination:
+		#np.savetxt(destination, songlist, fmt='%s', delimiter='\t')#, header=phrases)
+		np.savetxt(destination, songlist, fmt="%s", delimiter='\t')#, header=phrases)
+	with open('tmp.txt', 'rb+') as destination:
+		response = HttpResponse(destination, content_type='text/plain')
+	response['Content-disposition'] = 'attachment; filename="prufa.txt"'
+	return response
