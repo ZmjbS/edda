@@ -27,8 +27,8 @@ def transition_matrix(songs, phrases=None):
 	print(len(all_phrases))
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
-		phrase_list = list(song.phrase.all())
-		#phrase_list = list(song.phrase.filter(songs__is_transition=False))
+		phrase_list = list(song.phrases.all())
+		#phrase_list = list(song.phrases.filter(songs__is_transition=False))
 		''' The zip command creates a list of tuples of the form
 		  (<Phrase: 13a>, <Phrase: 5>)
 		Counter then returns a dictionary with the tuple as key and the number
@@ -126,6 +126,9 @@ def display_song_stuff(request):
 		rgb.append(rgbrow)
 
 	#phrases = Phrase.objects.all()
+
+	for phrase in phrases:
+		print(phrase, phrase.count(), phrase.durations())
 
 	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
 

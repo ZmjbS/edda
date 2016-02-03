@@ -14,7 +14,7 @@ class Phrase(models.Model):
 
 	def durations(self):
 		''' Returns a list of durations that the phrase takes. '''
-		return [ sp.duration() for sp in self.songs.all() ]
+		return [ sp.duration() for sp in self.song_phrases.all() ]
 
 	def __str__(self):
 		return self.name
@@ -35,7 +35,7 @@ class Song(models.Model):
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()
 
-	phrase = models.ManyToManyField(Phrase,through='SongPhrase', through_fields=('song', 'phrase'))
+	phrases = models.ManyToManyField(Phrase,through='SongPhrase', through_fields=('song', 'phrase'), related_name='songs')
 
 	def __str__(self):
 		phrasestring = ''
@@ -61,7 +61,7 @@ class SongPhrase(models.Model):
 	well. '''
 
 	song = models.ForeignKey(Song)
-	phrase = models.ForeignKey(Phrase, related_name='songs')
+	phrase = models.ForeignKey(Phrase, related_name='song_phrases')
 	is_transition = models.BooleanField(default=False)
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()
