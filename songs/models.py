@@ -3,6 +3,12 @@ from django.db import models
 class Phrase(models.Model):
 	name = models.CharField(max_length=8)
 
+	def count(self):
+		return self.songs.count()
+
+	def durations(self):
+		return [ sp.duration() for sp in self.songs.all() ]
+
 	def __str__(self):
 		return self.name
 
@@ -33,5 +39,5 @@ class SongPhrase(models.Model):
 	time_end = models.DateTimeField()
 	comment = models.TextField(blank=True, null=True)
 
-#	class Meta:
-#		unique_together = ('order', 'song',)
+	def duration(self):
+		return self.time_end - self.time_begin
