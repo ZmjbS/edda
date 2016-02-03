@@ -202,16 +202,25 @@ def download_song_phrases(request):
 	#phrases = '\t'.join([ p.name for p in phrases ])
 	#print(phrases)
 	songlist = []
+	maxphrases = 0
 	for song in songs:
 		phrasestring = song.soundfile+'-'+song.singer
 		for sp in song.songphrase_set.all():
-			phrasestring += '\t'+sp.phrase.name
+			# Removes repetitions:
+			if not sp.phrase.name == phrasestring.split('\t')[-1]:
+				phrasestring += '\t'+sp.phrase.name
+			#print(phrasestring.split('\t')[-1])
+			print(phrasestring)
+		phrases = phrasestring.count('\t')
+		if phrases > maxphrases:
+			maxphrases = phrases
 		songlist.append(phrasestring)
 	songlist = np.array(songlist)
-	print(songlist)
+	header = 'File-Singer'+'\t'.join([ 'Phr_'+str(num) for num in range(1,maxphrases) ])
+	#print(songlist)
+	#print(header)
 	with open('tmp.txt', 'wb+') as destination:
-		#np.savetxt(destination, songlist, fmt='%s', delimiter='\t')#, header=phrases)
-		np.savetxt(destination, songlist, fmt="%s", delimiter='\t')#, header=phrases)
+		np.savetxt(destination, songlist, fmt="%s", delimiter='\t', header=header)
 	with open('tmp.txt', 'rb+') as destination:
 		response = HttpResponse(destination, content_type='text/plain')
 	response['Content-disposition'] = 'attachment; filename="prufa.txt"'
