@@ -23,6 +23,17 @@ th { background-color: #008; color: lightblue; }
 	shape-rendering: crispEdges;
 }
 
+.chart rect {
+  fill: steelblue;
+}
+
+.chart text {
+  /*fill: white;*/
+  fill: darkblue;
+  font: 10px sans-serif;
+  /*text-anchor: end;*/
+}
+
 </style>
 <script src="http://d3js.org/d3.v3.js"></script>
 </head>
@@ -45,13 +56,63 @@ th { background-color: #008; color: lightblue; }
 </tr>
 {% endfor %}
 </table>
-<div style="float:left; width: 10em;">
+<div style="float:left; width: 10em; display: none;">
 <ul>
 {% for phrase in phrases %}
 	<li>{{ phrase }}</li>
 {% endfor %}
 </ul>
 </div>
+<svg class="chart">
+</svg>
+<script>
+
+//d3.json("{% url 'phrases_to_json' %}",function(error,json){
+d3.json("{% url 'phrases_to_json' %}",function(error,json){
+	data = json
+	//data = JSON.parse(json);
+	//console.log(data)
+
+	// Parse the date strings into javascript dates
+	max_count = 0
+	data.forEach(function(d) {
+		if ( max_count < d.count ) { max_count = d.count }
+	//	//d.count = parseDate(d['count']);
+		console.log(d)
+	});
+	//var data = [4, 8, 15, 16, 23, 42];
+
+	var width = 220,
+		barHeight = 20;
+
+	var x = d3.scale.linear()
+		//.domain([0, d3.max(data)])
+		//.domain([0, d3.max(data.count)])
+		.domain([0, max_count])
+		.range([0, width]);
+
+	var chart = d3.select(".chart")
+		.attr("width", width)
+		.attr("height", barHeight * data.length);
+
+	var bar = chart.selectAll("g")
+		.data(data)
+	  .enter().append("g")
+		.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+
+	bar.append("rect")
+		//.attr("width", x)
+		.attr("width", function(d) { return x(d.count) ; })
+		.attr("height", barHeight - 1);
+
+	bar.append("text")
+		//.attr("x", function(d) { return x(d) - 3; })
+		.attr("y", barHeight / 2)
+		.attr("dy", ".35em")
+		.text(function(d) { return d.phrase; });
+	});
+
+</script>
 <script>
 // For box plots: http://bl.ocks.org/mbostock/4061502
 // For the viridis colour map: https://gist.github.com/ekerstein/8235fbdc8b2a80c9c72f
@@ -90,6 +151,7 @@ d3.json("{% url 'songs_to_json' %}",function(error,json){
 
 	// Parse the date strings into javascript dates
 	data.forEach(function(d) {
+		//console.log(d)
 		//console.log(d['fields']['time_begin']);
 		d.created_date = parseDate(d['fields']['time_begin']);
 		//console.log(d.created_date)

@@ -127,9 +127,6 @@ def display_song_stuff(request):
 
 	#phrases = Phrase.objects.all()
 
-	for phrase in phrases:
-		print(phrase, phrase.count(), phrase.durations())
-
 	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
 
 def tm_to_json(request):
@@ -145,6 +142,23 @@ def songs_to_json(request):
 	#tm, phrases= transition_matrix(songs)
 	print(songs)
 	return JsonResponse(serializers.serialize('json', songs), safe=False)
+
+def phrases_to_json(request):
+	from django.http import JsonResponse
+	from django.core import serializers
+	phrases = Phrase.objects.all()
+	phrase_info = []
+	for phrase in phrases:
+		print(phrase.name, phrase.count())
+		phrase_info.append({ 'phrase': phrase.name, 'count': phrase.count(), 'durations': str(phrase.durations()), })
+	#	print(phrase_info)
+	print(phrase_info)
+	#return JsonResponse(serializers.serialize('json', phrase_info), safe=False)
+	return JsonResponse(phrase_info, safe=False)
+	#return JsonResponse(phrase_info)
+	#return JsonResponse(serializers.serialize('json', phrases), safe=False)
+	#return JsonResponse({'phrase': 'test', })#, safe=False)
+	#return JsonResponse(serializers.serialize('json', phrases), safe=False)
 
 def process_file(file):
 	import csv, datetime
