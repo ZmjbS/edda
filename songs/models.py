@@ -1,4 +1,5 @@
 from django.db import models
+#from django.contrib.gis.db import models
 
 class Phrase(models.Model):
 
@@ -34,6 +35,9 @@ class Song(models.Model):
 	singer = models.CharField(max_length=4)
 	time_begin = models.DateTimeField()
 	time_end = models.DateTimeField()
+
+#	position = models.PointField(blank=True, null=True)
+#	objects = models.GeoManager()
 
 	phrases = models.ManyToManyField(Phrase,through='SongPhrase', through_fields=('song', 'phrase'), related_name='songs')
 
