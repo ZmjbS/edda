@@ -1,0 +1,36 @@
+<html>
+<body>
+<form action="/songs/upload/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Submit" />
+</form>
+<ul>
+{% for field in required_fields %}
+	<li>
+		<select>
+		{% for header in headers %}
+			<option>{{ header }}</option>
+		{% endfor %}
+		</select>
+		{{ field.1 }}
+	</li>
+{% endfor %}
+</ul>
+
+<table>
+	<tr>
+{% for header in headers %}
+	<th>{{ header }}</th>
+{% endfor %}
+	<tr>
+{% for row in data %}
+	<tr>
+	{% for cell in row %}
+		<td>{{ cell }}</td>
+	{% endfor %}
+	</tr>
+{% endfor %}
+</table>
+</body>
+</html>
