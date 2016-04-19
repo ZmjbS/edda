@@ -221,40 +221,6 @@ def phrases_to_json(request):
 #	return render(request, 'songs/display_upload.html', { 'form': form })
 		
 
-def process_file(file):
-	import csv, datetime
-	from dateutil import parser
-	with open('tmp.txt', 'wb+') as destination:
-		for chunk in file.chunks():
-			destination.write(chunk)
-	with open('tmp.txt', 'r') as datafile:
-		for data in csv.DictReader(datafile, delimiter='\t'):
-			''' Begin with getting or creating the song '''
-			#song_begin = datetime.datetime.strptime(data['Date']+'-'+data['TimeStart'], '%d.%m.%Y-%H:%M:%S.%f')
-			# TODO: This hasn't been tested...:
-			song_begin = parse(data['Date']+' '+data['TimeStart'])
-			song_length = datetime.datetime.strptime(data['FileDur'],'%H:%M:%S')
-			delta = timedelta(hours=song_length.hour, minutes=song_length.minute, seconds=song_length.second)
-			song_end = song_begin + delta
-			position = GEOSGeometry('POINT('+data['Lat']+', '+data['Long']+')')
-
-			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end, position=position)
-
-			''' Now look up the phrase and create the corresponding song phrase. '''
-			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
-			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
-
-			phrasenames = []
-			phrasenames = data['PhrasesForDatabase'].split('->')
-			for phrasename in phrasenames:
-				phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
-
-				if len(phrasenames) == 1:
-					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
-				else:
-					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
-	return 'f'
-
 @csrf_exempt
 def upload_file(request):
 
@@ -288,11 +254,15 @@ def upload_file(request):
 				datafile.seek(0)
 
 				required_fields = [
-					('Recording date', 'The date of when the file recording began.'),
-					('Recording time', 'The time of when the file recording began.'),
-					('Phrase begin', 'The time of the beginning of the phrase, in seconds from the beginning of the recording.'),
-					('Phrase end', 'The time of the end of the phrase, in seconds from the beginning of the recording.'),
-					('Comment', 'Any comment that might follow the song'),
+					# ('song-soundfile', 'An identifier for the sound file.'), # Provided by uploader.
+					('songphrase-time_begin', 'Time of the phrase beginning, in seconds, from the beginning of the recording.'),
+					('songphrase-time_end', 'Time of the phrase sequence end, in seconds.'),
+
+					('song-phrases', 'Phrase-sequence string.'),
+					('song-singer', 'The column which identifies the singer.'),
+
+					('song-time_begin-date', 'Date of the beginning of the recording.'),
+					('song-time_begin-time', 'Time of the beginning of the recording.'),
 					]
 
 				headers = datafile.readline().strip().split('\t')
@@ -337,6 +307,60 @@ def upload_file(request):
 		''' If the request isn't POST, we just return the upload interface. '''
 
 	#	print('not post')
+		form = UploadFileForms()
+		return render(request, 'songs/upload.html', { 'form': form })
+
+@csrf_exempt
+def process_file(request):
+
+	if request.method == 'POST':
+
+		''' We need to receive this by POST as we're doing changes to the database.
+		'''
+
+		print('is post')
+		#form = UploadFileForms(request.POST, request.FILES)
+		#print(form)
+
+		#if form.is_valid():
+			#print(request.POST)
+
+		import csv, datetime
+		from dateutil import parser
+
+					#('songphrase-time_begin', 'Time of the phrase beginning, in seconds, from the beginning of the recording.'),
+					#('songphrase-time_end', 'Time of the phrase sequence end, in seconds.'),
+#
+					#('song-phrases', 'Phrase-sequence string.'),
+					#('song-singer', 'The column which identifies the singer.'),
+#
+					#('song-time_begin-date', 'Date of the beginning of the recording.'),
+					#('song-time_begin-time', 'Time of the beginning of the recording.'),
+#			headers = request.POST['headers']
+#			''' Read in data from request.POST['data'], possibly with the CSV module. '''
+#
+#			''' Run through each line of the data-"file" and get or create the corresponding song. '''
+#			song_begin = parse(data[headers['Date']]+' '+data['TimeStart'])
+#			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin)
+#
+#			''' Now look up the phrase and create the corresponding song phrase. '''
+#			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
+#			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
+#
+#			phrasenames = []
+#			phrasenames = data['PhrasesForDatabase'].split('->')
+#			for phrasename in phrasenames:
+#				phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
+#
+#				if len(phrasenames) == 1:
+#					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
+#				else:
+#					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
+		print('DONE')
+		return render(request, 'songs/upload-process.html', {})
+			
+	else:
+		print('Not POST... :-(\nDiverting to upload page.')
 		form = UploadFileForms()
 		return render(request, 'songs/upload.html', { 'form': form })
 
