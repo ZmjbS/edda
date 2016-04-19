@@ -34,7 +34,7 @@ class Song(models.Model):
 	soundfile = models.CharField(max_length=64)
 	singer = models.CharField(max_length=4)
 	time_begin = models.DateTimeField()
-	time_end = models.DateTimeField()
+	# time_end = models.DateTimeField()
 
 #	position = models.PointField(blank=True, null=True)
 #	objects = models.GeoManager()
