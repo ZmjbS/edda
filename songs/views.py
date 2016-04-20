@@ -100,7 +100,6 @@ def transition_matrix(songs, phrases=None):
 
 	print(percentages)
 
-	#return tm, all_phrases
 	return tm, all_phrases
 
 def display_song_stuff(request):
@@ -219,10 +218,9 @@ def phrases_to_json(request):
 #					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
 #	return 'f'
 #	return render(request, 'songs/display_upload.html', { 'form': form })
-		
 
 @csrf_exempt
-def upload_file(request):
+def upload_songs(request):
 
 	if request.method == 'POST':
 
@@ -245,101 +243,151 @@ def upload_file(request):
 			import tempfile
 			import io
 
-			#with open('tmp.txt', 'wb+') as destination:
 			with tempfile.TemporaryFile('w+t') as datafile:
-			#datafile = tempfile.TemporaryFile()
 				for chunk in request.FILES['file'].chunks():
+					''' When we read from the datafile using csv.DictReader()
+					it expects a text string, so we need to decode() the
+					bytestring to turn it into a text string before writing it
+					to datafile. '''
 					datafile.write(chunk.decode())
 					print(chunk.decode())
 				datafile.seek(0)
 
+				''' These are the fields that we need to be able to populate
+				the database. The user may upload a file with more fields or
+				give the columns funny names so we have to add a step where the
+				user matches these fields with the headers in the uploaded
+				file. '''
 				required_fields = [
-					# ('song-soundfile', 'An identifier for the sound file.'), # Provided by uploader.
 					('songphrase-time_begin', 'Time of the phrase beginning, in seconds, from the beginning of the recording.'),
 					('songphrase-time_end', 'Time of the phrase sequence end, in seconds.'),
-
 					('song-phrases', 'Phrase-sequence string.'),
 					('song-singer', 'The column which identifies the singer.'),
-
 					('song-time_begin-date', 'Date of the beginning of the recording.'),
 					('song-time_begin-time', 'Time of the beginning of the recording.'),
 					]
 
+				''' Grab the first line of the datafile, strip it of leading
+				and trailing spaces and split it along tabs into a list of
+				available headers. Then seek back to the beginning of the file
+				so that csv.DictReader has the headers to go by.'''
 				headers = datafile.readline().strip().split('\t')
-				print('headers------------')
-				print(headers)
-
-				# TODO: Select headers
-				# TODO: Pre-process data???
-				# TODO: Submit data/confirm upload
-
-				datatable = []
 				datafile.seek(0)
+
+				''' Generate a list of rows with the data to easily iterate
+				over and form a table with the data in the table. '''
+				datatable = []
 				for data in csv.DictReader(datafile, delimiter='\t'):
 					print(data)
 					row = []
 					for field in headers:
 						row.append(data[field])
 					datatable.append(row)
-#					''' Begin with getting or creating the song '''
-#					#song_begin = datetime.datetime.strptime(data['Date']+'-'+data['TimeStart'], '%d.%m.%Y-%H:%M:%S.%f')
-#					# TODO: This hasn't been tested...:
-#					song_begin = parser.parse(data['Date']+' '+data['TimeStart'])
-#					song_length = datetime.datetime.strptime(data['FileDur'],'%H:%M:%S')
-#					delta = timedelta(hours=song_length.hour, minutes=song_length.minute, seconds=song_length.second)
-#					song_end = song_begin + delta
-#					position = GEOSGeometry('POINT('+data['Lat']+', '+data['Long']+')')
-				#datafile.seek(0)
-				#print(datafile.read())
-				#return render(request, 'songs/confirm_upload.html', { 'headers': headers, 'required_fields': required_fields, 'data': datafile.read().split('\t'), 'form': form })
-			#return render(request, 'songs/confirm_upload.html', { 'headers': headers, 'required_fields': required_fields, 'data': request.FILES['file'].read(), 'form': form })
-			return render(request, 'songs/confirm_upload.html', { 'headers': headers, 'required_fields': required_fields, 'data': datatable, 'form': form })
+			return render(request, 'songs/upload_songs.html', { 'headers': headers, 'required_fields': required_fields, 'data': datatable, 'form': form })
 
-			# TODO: The following processes the file, stores the data in the database and .
-			#process_file(request.FILES['file'])
-			##return HttpResponseRedirect('/songs/file/'+request.POST['filename'])
-			#return HttpResponseRedirect('/songs/')
 		else:
 			print('form is invalid.')
-			return render(request, 'songs/upload.html', { 'form': form })
+			return render(request, 'songs/upload_songs.html', { 'form': form })
 	else:
-
 		''' If the request isn't POST, we just return the upload interface. '''
-
-	#	print('not post')
-		form = UploadFileForms()
-		return render(request, 'songs/upload.html', { 'form': form })
+		return HttpResponseRedirect('/songs/upload/')
 
 @csrf_exempt
-def process_file(request):
+def upload_review(request):
 
+	form = UploadFileForms()
 	if request.method == 'POST':
 
 		''' We need to receive this by POST as we're doing changes to the database.
 		'''
 
 		print('is post')
-		#form = UploadFileForms(request.POST, request.FILES)
-		#print(form)
-
-		#if form.is_valid():
-			#print(request.POST)
 
 		import csv, datetime
 		from dateutil import parser
+		import ast
 
-					#('songphrase-time_begin', 'Time of the phrase beginning, in seconds, from the beginning of the recording.'),
-					#('songphrase-time_end', 'Time of the phrase sequence end, in seconds.'),
-#
-					#('song-phrases', 'Phrase-sequence string.'),
-					#('song-singer', 'The column which identifies the singer.'),
-#
-					#('song-time_begin-date', 'Date of the beginning of the recording.'),
-					#('song-time_begin-time', 'Time of the beginning of the recording.'),
-#			headers = request.POST['headers']
-#			''' Read in data from request.POST['data'], possibly with the CSV module. '''
-#
-#			''' Run through each line of the data-"file" and get or create the corresponding song. '''
+		import tempfile
+		with tempfile.TemporaryFile('w+t') as datafile:
+			''' Write the headers and data to the temporary datafile. '''
+			datafile.write(request.POST['headers'].replace('\', \'', '\t').replace('\'], [\'','')[2:-2])
+			datafile.write(request.POST['data'].replace('\', \'', '\t').replace('\'], [\'','\n')[3:-3])
+			datafile.seek(0)
+
+			''' Populate datatable_headers with the required headers from the
+			upload file names. '''
+			datatable_headers = []
+			for fieldname, fielddescription in ast.literal_eval(request.POST['required_fields']):
+				if fieldname != 'song-time_begin-time':
+					datatable_headers.append(request.POST[fieldname])
+			datafile.seek(0)
+
+			''' Populate a list with the required table. We also populate a
+			list of phrases that the file generates '''
+			datatable = []
+			phrases = []
+			for data in csv.DictReader(datafile, delimiter='\t'):
+				''' Add the required fields from each row to the datatable. '''
+				row = []
+				for fieldname, fielddescription in ast.literal_eval(request.POST['required_fields']):
+					''' Each row is a list of dictionaries with the keys
+					'contents' and 'type'. The latter is so that we're able to
+					loop over the phrases in the displayed table in the
+					template. '''
+					if fieldname == 'song-phrases':
+						''' Split the transition phrases up along the '->'
+						separators, strip them of surrounding spaces (these may
+						occur as typos), and turn them into a list.'''
+						transition_phrase_list = list(map(str.strip, data[request.POST['song-phrases']].split('->')))
+						row.append({'contents': transition_phrase_list, 'type': 'list', })
+
+						''' Populate the phrases list with all phrases that are
+						used in this song file so that it's easier to spot
+						errors in phrase names. '''
+						for phrase in transition_phrase_list:
+							if phrase not in phrases:
+								phrases.append(phrase)
+					else:
+						''' Currently, Raven generates text files with the
+						recording date and time in separate columns. We have to
+						merge these. '''
+						if fieldname == 'song-time_begin-date':
+							row.append({
+								'contents': parser.parse(data[request.POST['song-time_begin-date']]+' '
+														+data[request.POST['song-time_begin-time']]),
+								'type': 'date',
+								})
+						else:
+							''' Since we've taken care of both the date and
+							time columns above, we just do nothing for the time
+							column, but for any other field we just add the
+							content and call the type 'other'. '''
+							if fieldname != 'song-time_begin-time':
+								row.append({'contents': data[request.POST[fieldname]], 'type': 'other', })
+				datatable.append(row)
+
+			''' Sort the phrases to make them easier to read through. '''
+			phrases = sorted(phrases)
+
+		return_dict = {
+			'form': form,
+			'data': datatable,
+			'datatable_headers': datatable_headers,
+			'phrases': phrases,
+			}
+		return render(request, 'songs/upload_review.html', return_dict )
+
+	else:
+		''' If we're not getting an POST request for review just redirect to
+		the upload form. '''
+		return HttpResponseRedirect('/songs/upload/')
+
+@csrf_exempt
+def upload_process(request):
+
+		''' Run through each line of the data-"file" and get or create the corresponding song. '''
+		#for row in request.POST['data']:
+			#print(row)
 #			song_begin = parse(data[headers['Date']]+' '+data['TimeStart'])
 #			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin)
 #
@@ -356,13 +404,6 @@ def process_file(request):
 #					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
 #				else:
 #					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
-		print('DONE')
-		return render(request, 'songs/upload-process.html', {})
-			
-	else:
-		print('Not POST... :-(\nDiverting to upload page.')
-		form = UploadFileForms()
-		return render(request, 'songs/upload.html', { 'form': form })
 
 def download_tm(request):
 	## Range A
