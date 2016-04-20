@@ -1,0 +1,31 @@
+<html>
+<body>
+<form action="/songs/upload/" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    <input type="submit" value="Re-upload file" />
+</form>
+
+{% for phrase in phrases %}
+<span style="background: #ddd;">{{ phrase }}</span>,
+{% endfor %}
+<table>
+	<tr>
+{% for header in datatable_headers %}
+	<th>{{ header }}</th>
+{% endfor %}
+	<tr>
+{% for row in data %}
+	<tr>
+	{% for cell in row %}
+		{% if cell.type == 'list' %}
+		<td>{% for content in cell.contents %}<span style="background-color: #ddd;">{{ content }}</span>{% if not forloop.last %}&rarr;{% endif %}{% endfor %}</td>
+		{% else %}
+		<td>{{ cell.contents }}</td>
+		{% endif %}
+	{% endfor %}
+	</tr>
+{% endfor %}
+</table>
+</body>
+</html>
