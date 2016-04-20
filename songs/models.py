@@ -22,16 +22,16 @@ class Phrase(models.Model):
 
 class Song(models.Model):
 
-	''' Each song is identified by the soundfile on which it is recorded and
-	the singer. The singer is usually identified by an upper case letter of the
-	alphabet, in order of which the singer appears in the recording.
+	''' Each song is identified by the area and season on which it is recorded
+	and the singer. The singer is usually identified by an upper case letter of
+	the alphabet, in order of which the singer appears in the recording.
 
 	The beginning and ending time of each song is recorded.
 
 	Songs consist of phrases which are referenced through the SongPhrase model.
 	'''
 
-	soundfile = models.CharField(max_length=64)
+	area_and_season = models.CharField(max_length=64)
 	singer = models.CharField(max_length=4)
 	time_begin = models.DateTimeField()
 	# time_end = models.DateTimeField()
@@ -50,7 +50,7 @@ class Song(models.Model):
 				phrasestring += ', ('+str(sp.phrase)+')'
 			else:
 				phrasestring += ', '+str(sp.phrase)
-		return self.soundfile + '-' + self.singer + ':' + phrasestring[1:]
+		return self.area_and_season + '-' + self.singer + ':' + phrasestring[1:]
 
 class SongPhrase(models.Model):
 
