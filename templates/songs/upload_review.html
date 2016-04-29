@@ -1,0 +1,38 @@
+<html>
+<body>
+
+<p>Phrases found in the song upload file:</p>
+{% for phrase in phrases %}
+<span style="background: #ddd;">{{ phrase }}</span>,
+{% endfor %}
+
+<p>Please review the data table below if there are no errors (typos etc.) in the phrase list above before saving the data to the database.</p>
+
+<form action="/songs/upload/save" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+	<input type="hidden" name="area_and_season" value="{{ area_and_season }}" />
+	<input type="hidden" name="headers" value="{{ datatable_headers }}" />
+	<input type="hidden" name="data" value="{{ data }}" />
+    <input type="submit" value="Save data" />
+</form>
+
+<table>
+	<tr>
+{% for header in datatable_headers %}
+	<th>{{ header }}</th>
+{% endfor %}
+	<tr>
+{% for row in data %}
+	<tr>
+	{% for cell in row %}
+		{% if cell.type == 'list' %}
+		<td>{% for content in cell.contents %}<span style="background-color: #ddd;">{{ content }}</span>{% if not forloop.last %}&rarr;{% endif %}{% endfor %}</td>
+		{% else %}
+		<td>{{ cell.contents }}</td>
+		{% endif %}
+	{% endfor %}
+	</tr>
+{% endfor %}
+</table>
+</body>
+</html>

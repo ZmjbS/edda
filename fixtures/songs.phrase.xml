@@ -1,78 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <django-objects version="1.0">
-  <object model="songs.phrase" pk="1">
-    <field name="name" type="CharField">1</field>
-  </object>
-  <object model="songs.phrase" pk="2">
-    <field name="name" type="CharField">2</field>
-  </object>
-  <object model="songs.phrase" pk="3">
-    <field name="name" type="CharField">3a</field>
-  </object>
-  <object model="songs.phrase" pk="4">
-    <field name="name" type="CharField">3b</field>
-  </object>
-  <object model="songs.phrase" pk="5">
-    <field name="name" type="CharField">3c</field>
-  </object>
-  <object model="songs.phrase" pk="6">
-    <field name="name" type="CharField">4a</field>
-  </object>
-  <object model="songs.phrase" pk="7">
-    <field name="name" type="CharField">4b</field>
-  </object>
-  <object model="songs.phrase" pk="8">
-    <field name="name" type="CharField">5a</field>
-  </object>
-  <object model="songs.phrase" pk="9">
-    <field name="name" type="CharField">5b</field>
-  </object>
-  <object model="songs.phrase" pk="10">
-    <field name="name" type="CharField">6</field>
-  </object>
-  <object model="songs.phrase" pk="11">
-    <field name="name" type="CharField">7</field>
-  </object>
-  <object model="songs.phrase" pk="12">
-    <field name="name" type="CharField">8</field>
-  </object>
-  <object model="songs.phrase" pk="13">
-    <field name="name" type="CharField">9</field>
-  </object>
-  <object model="songs.phrase" pk="14">
-    <field name="name" type="CharField">10</field>
-  </object>
-  <object model="songs.phrase" pk="15">
-    <field name="name" type="CharField">11a</field>
-  </object>
-  <object model="songs.phrase" pk="16">
-    <field name="name" type="CharField">11b</field>
-  </object>
-  <object model="songs.phrase" pk="17">
-    <field name="name" type="CharField">12</field>
-  </object>
-  <object model="songs.phrase" pk="18">
-    <field name="name" type="CharField">13a</field>
-  </object>
-  <object model="songs.phrase" pk="19">
-    <field name="name" type="CharField">13b</field>
-  </object>
-  <object model="songs.phrase" pk="20">
-    <field name="name" type="CharField">13c</field>
-  </object>
-  <object model="songs.phrase" pk="21">
-    <field name="name" type="CharField">14a</field>
-  </object>
-  <object model="songs.phrase" pk="22">
-    <field name="name" type="CharField">14b</field>
-  </object>
-  <object model="songs.phrase" pk="23">
-    <field name="name" type="CharField">15</field>
-  </object>
-  <object model="songs.phrase" pk="24">
-    <field name="name" type="CharField">16</field>
-  </object>
-  <object model="songs.phrase" pk="25">
-    <field name="name" type="CharField">17</field>
-  </object>
+  <object model="songs.phrase" pk="01"> <field name="name" type="CharField">Begin</field> </object>
+  <object model="songs.phrase" pk="02"> <field name="name" type="CharField">End</field> </object>
+  <object model="songs.phrase" pk="03"> <field name="name" type="CharField">1</field> </object>
+  <object model="songs.phrase" pk="04"> <field name="name" type="CharField">2</field> </object>
+  <object model="songs.phrase" pk="05"> <field name="name" type="CharField">3a</field> </object>
+  <object model="songs.phrase" pk="06"> <field name="name" type="CharField">3b</field> </object>
+  <object model="songs.phrase" pk="07"> <field name="name" type="CharField">3c</field> </object>
+  <object model="songs.phrase" pk="08"> <field name="name" type="CharField">4a</field> </object>
+  <object model="songs.phrase" pk="09"> <field name="name" type="CharField">4b</field> </object>
+  <object model="songs.phrase" pk="10"> <field name="name" type="CharField">5a</field> </object>
+  <object model="songs.phrase" pk="11"> <field name="name" type="CharField">5b</field> </object>
+  <object model="songs.phrase" pk="12"> <field name="name" type="CharField">6</field> </object>
+  <object model="songs.phrase" pk="13"> <field name="name" type="CharField">7</field> </object>
+  <object model="songs.phrase" pk="14"> <field name="name" type="CharField">8</field> </object>
+  <object model="songs.phrase" pk="15"> <field name="name" type="CharField">9</field> </object>
+  <object model="songs.phrase" pk="16"> <field name="name" type="CharField">10</field> </object>
+  <object model="songs.phrase" pk="17"> <field name="name" type="CharField">11a</field> </object>
+  <object model="songs.phrase" pk="18"> <field name="name" type="CharField">11b</field> </object>
+  <object model="songs.phrase" pk="19"> <field name="name" type="CharField">12</field> </object>
+  <object model="songs.phrase" pk="20"> <field name="name" type="CharField">13a</field> </object>
+  <object model="songs.phrase" pk="21"> <field name="name" type="CharField">13b</field> </object>
+  <object model="songs.phrase" pk="22"> <field name="name" type="CharField">13c</field> </object>
+  <object model="songs.phrase" pk="23"> <field name="name" type="CharField">14a</field> </object>
+  <object model="songs.phrase" pk="24"> <field name="name" type="CharField">14b</field> </object>
+  <object model="songs.phrase" pk="25"> <field name="name" type="CharField">15</field> </object>
+  <object model="songs.phrase" pk="26"> <field name="name" type="CharField">16</field> </object>
+  <object model="songs.phrase" pk="27"> <field name="name" type="CharField">17</field> </object>
+  <object model="songs.phrase" pk="28"> <field name="name" type="CharField">18</field> </object>
+  <object model="songs.phrase" pk="29"> <field name="name" type="CharField">19</field> </object>
+  <object model="songs.phrase" pk="30"> <field name="name" type="CharField">20</field> </object>
 </django-objects>

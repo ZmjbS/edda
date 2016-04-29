@@ -1,21 +1,421 @@
+{% load staticfiles %}
 <html>
-<body>
-<table>
+<head>
+<style>
+table { border-collapse: collapse; }
+td, th { min-width: 1.4em !important; max-width: 1.4em !important; height: 1.4em; overflow: hidden; }
+td { text-align: center; }
+th:first-child { text-align: right; max-width: 100px !important; }
+th { background-color: #008; color: lightblue; }
+/* Chord CSS 
+.chord path {
+  fill-opacity: .67;
+  stroke: #000;
+  stroke-width: .5px;
+} */
+
+.bar {
+	fill: steelblue;
+	shape-rendering: crispEdges;
+}
+.axis path, .axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+.chart rect {
+  fill: steelblue;
+}
+
+.chart text {
+  /*fill: white;*/
+  fill: darkblue;
+  font: 10px sans-serif;
+  /*text-anchor: end;*/
+}
+
+</style>
+<script src="http://d3js.org/d3.v3.js"></script>
+<!-- Markov chain diagram -->
+<script src="{% static 'js/markovchain-vector.js' %}" charset="utf-8"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js"></script>
+<style>
+body {
+  background-color: none;
+  color: #333;
+}
+.controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+.st-diagram {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+}
+.st-diagram .nodes {
+  pointer-events: all;
+}
+.matrixInput {
+  display: block;
+  height: 100%;
+  width: 50%;
+  right: 0;
+  position: absolute;
+}
+.matrixInput textarea{
+  border: none;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: red;
+  width: 100%;
+  height: 100%;
+  font-size: 20px;
+  outline: none;
+}
+.matrixInput textarea.valid {
+  color: inherit;
+}
+.matrix table {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  table-layout: fixed;
+}
+.matrix table td {
+  width: 33.33%;
+}
+.matrix table td input {
+  pointer-events: all;
+  width: 80%;
+}
+</style>
+</head>
+<body ng-app="myApp" ng-controller="MainCtrl">
+<table style="float:left; max-width: calc(100% - 12em);">
 <tr>
 	<th></th>
 	{% for phrase in phrases %}
-	<th>{{ phrase }}</th>
+	<th>{{ phrase }}{# forloop.counter0 #}</th>
 	{% endfor %}
+	<td style="min-width: 100px;"></td>
 </tr>
 {% load index %}
 {% for row in transition_matrix %}
-<tr style="height: 1em;">
-	<th>{{ phrases | index:forloop.counter0 }}</th>
+<tr>
+	<th>{{ phrases | index:forloop.counter0 }}<!--&nbsp;({{ forloop.counter0 }}) --></th>
 	{% for num in row %}
-		<td style="width: 1.3em; text-align: right; background-color: {{ colour_matrix|index:forloop.parentloop.counter0|index:forloop.counter0 }};">{% if num != 0 %}{{ num }}{% endif %}</td>
+		<td style="background-color: {{ colour_matrix|index:forloop.parentloop.counter0|index:forloop.counter0 }};">{% if num != 0 %}{{ num }}{% endif %}</td>
 	{% endfor %}
 </tr>
 {% endfor %}
 </table>
+<div style="float:left; width: 10em; display: none;">
+<ul>
+{% for phrase in phrases %}
+	<li>{{ phrase }}</li>
+{% endfor %}
+</ul>
+</div>
+<svg class="chart">
+</svg>
+<script>
+
+d3.json("{% url 'phrases_to_json' %}",function(error,json){
+	data = json
+	//data = JSON.parse(json);
+	//console.log(data)
+
+	// Parse the date strings into javascript dates
+	max_count = 0
+	data.forEach(function(d) {
+		if ( max_count < d.count ) { max_count = d.count }
+	//	//d.count = parseDate(d['count']);
+		//console.log(d)
+	});
+
+	var width = 220,
+		barHeight = 20;
+
+	var x = d3.scale.linear()
+		//.domain([0, d3.max(data)])
+		//.domain([0, d3.max(data.count)])
+		.domain([0, max_count])
+		.range([0, width]);
+
+	var chart = d3.select(".chart")
+		.attr("width", width)
+		.attr("height", barHeight * data.length);
+
+	var bar = chart.selectAll("g")
+		.data(data)
+	  .enter().append("g")
+		.attr("transform", function(d, i) { return "translate(0," + i * barHeight + ")"; });
+
+	bar.append("rect")
+		//.attr("width", x)
+		.attr("width", function(d) { return x(d.count) ; })
+		.attr("height", barHeight - 1);
+
+	bar.append("text")
+		//.attr("x", function(d) { return x(d) - 3; })
+		.attr("y", barHeight / 2)
+		.attr("dy", ".35em")
+		.text(function(d) { return d.phrase; });
+	});
+
+</script>
+
+<br style="clear: both;" />
+<!--
+<div style="width: 1em">
+  <st-diagram states="states" transition-matrix="transitionMatrix"
+  center="diagramCenter"
+  duration="duration"></st-diagram>
+</div>
+<br style="clear: both;" />
+<script>
+/* Markov chain diagram 
+ * Taken from: http://setosa.io/blog/2014/07/26/markov-chains/
+ */
+
+var myApp = angular.module('myApp', []);
+
+myApp.controller('MainCtrl', function($scope, utils, $window) {
+  $scope.states = [
+    { label: 'A', index: 0 },
+    { label: 'B', index: 1 }
+    ];
+  
+  angular.element($window).on('resize', function() { $scope.$apply(); });
+
+  $scope.diagramCenter = [0.40, 0.5];
+  
+  $scope.speedRange = 2;
+  $scope.$watch('speedRange', function(speed) {
+    $scope.duration = 2000 / +speed;
+  });
+
+  $scope.transitionMatrix = [
+    [0.5, 0.5],
+    [0.5, 0.5]
+  ];
+});
+</script>
+-->
+<script>
+// For box plots: http://bl.ocks.org/mbostock/4061502
+// For the viridis colour map: https://gist.github.com/ekerstein/8235fbdc8b2a80c9c72f
+
+/* Plot songs by date */
+/* Code borrowed from:
+	http://bl.ocks.org/sbrudz/ed6454e3d25640d19a41
+*/
+var margin = {top: 10, right: 30, bottom: 30, left: 50},
+	//width = 960 - margin.left - margin.right,
+	width = window.innerWidth - margin.left - margin.right,
+	height = 120 - margin.top - margin.bottom;
+
+//var parseDate = d3.time.format("%m/%d/%Y %I:%M:%S %p").parse;
+var parseDate = d3.time.format("%Y-%m-%dT%H:%M:%S").parse;
+var formatDate = d3.time.format("%d/%m/%y");
+var formatCount = d3.format(",.0f");
+
+var x = d3.time.scale().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+var xAxis = d3.svg.axis().scale(x).orient("bottom").tickFormat(formatDate);
+var yAxis = d3.svg.axis().scale(y).orient("left").ticks(6);
+
+// Create the SVG drawing area
+var svg = d3.select("body")
+		  .append("svg")
+		  .attr("width", width + margin.left + margin.right)
+		  .attr("height", height + margin.top + margin.bottom)
+		  .append("g")
+		  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.json("{% url 'songs_to_json' %}",function(error,json){
+	// We receive the json as a string so we must parse it to a JSON object.
+	data = JSON.parse(json);
+
+	// Parse the date strings into javascript dates
+	data.forEach(function(d) {
+		//console.log(d)
+		//console.log(d['fields']['time_begin']);
+		d.created_date = parseDate(d['fields']['time_begin']);
+		//console.log(d.created_date)
+	});
+
+	// Determine the first and list dates in the data set
+	//var monthExtent = d3.extent(data, function(d) { return d.created_date; });
+	var dayExtent = d3.extent(data, function(d) { return d.created_date; });
+
+	// Create one bin per month, use an offset to include the first and last months
+	//var monthBins = d3.time.months(d3.time.month.offset(monthExtent[0],-1),
+	//                               d3.time.month.offset(monthExtent[1],1));
+	var dayBins = d3.time.days(d3.time.day.offset(dayExtent[0],-1),
+	                               d3.time.day.offset(dayExtent[1],1));
+
+	// Use the histogram layout to create a function that will bin the data
+	//var binByMonth = d3.layout.histogram()
+	//	               .value(function(d) { return d.created_date; })
+	//	               .bins(monthBins);
+	var binByDay = d3.layout.histogram()
+		               .value(function(d) { return d.created_date; })
+		               .bins(dayBins);
+
+	// Bin the data by month
+	//var histData = binByMonth(data);
+	var histData = binByDay(data);
+
+	// Scale the range of the data by setting the domain
+	//x.domain(d3.extent(monthBins));
+	x.domain(d3.extent(dayBins));
+	y.domain([0, d3.max(histData, function(d) { return d.y; })]);
+
+	// Set up one bar for each bin
+	// Months have slightly different lengths so calculate the width for each bin
+	// Note: dx, the width of the histogram bin, is in milliseconds so convert the x value
+	// into UTC time and convert the sum back to a date in order to help calculate the width
+	// Thanks to npdoty for pointing this out in this stack overflow post:
+	// http://stackoverflow.com/questions/17745682/d3-histogram-date-based
+	svg.selectAll(".bar")
+	   .data(histData)
+	   .enter().append("rect")
+	   .attr("class", "bar")
+	   .attr("x", function(d) { return x(d.x); })
+	   .attr("width", function(d) { return x(new Date(d.x.getTime() + d.dx))-x(d.x)-1; })
+	   .attr("y", function(d) { return y(d.y); })
+	   .attr("height", function(d) { return height - y(d.y); });
+
+	// Add the X Axis
+	svg.append("g")
+	   .attr("class", "x axis")
+	   .attr("transform", "translate(0," + height + ")")
+	   .call(xAxis);
+
+	// Add the Y Axis and label
+	svg.append("g")
+	   .attr("class", "y axis")
+	   .call(yAxis)
+	   .append("text")
+	   .attr("transform", "rotate(-90)")
+	   .attr("y", 6)
+	   .attr("dy", ".71em")
+	   .style("text-anchor", "end")
+	   .text("Songs");
+	
+});
+
+/*
+var data
+d3.json("{% url 'tm_to_json' %}",function(error,json){
+	data = json;
+	console.log(data);
+
+	var chord = d3.layout.chord()
+		.padding(.05)
+		.sortSubgroups(d3.descending)
+		.matrix(data);
+
+	var width = 960,
+		height = 500,
+		innerRadius = Math.min(width, height) * .41,
+		outerRadius = innerRadius * 1.1;
+
+	var fill = d3.scale.ordinal()
+		.domain(d3.range(4))
+		.range(["#000000", "#FFDD89", "#957244", "#F26223"]);
+
+	var svg = d3.select("body").append("svg")
+		.attr("width", width)
+		.attr("height", height)
+	  .append("g")
+		.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+	svg.append("g").selectAll("path")
+		.data(chord.groups)
+		.enter().append("path")
+		.style("fill", function(d) { return fill(d.index); })
+		.style("stroke", function(d) { return fill(d.index); })
+		.attr("d", d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius))
+		.on("mouseover", fade(.1))
+		.on("mouseout", fade(1));
+
+	var ticks = svg.append("g").selectAll("g")
+		.data(chord.groups)
+		.enter().append("g").selectAll("g")
+		.data(groupTicks)
+		.enter().append("g")
+		.attr("transform", function(d) {
+			return "rotate(" + (d.angle * 180 / Math.PI - 90) + ")"
+				+ "translate(" + outerRadius + ",0)";
+		});
+
+	ticks.append("line")
+		.attr("x1", 1)
+		.attr("y1", 0)
+		.attr("x2", 5)
+		.attr("y2", 0)
+		.style("stroke", "#000");
+
+	ticks.append("text")
+		.attr("x", 8)
+		.attr("dy", ".35em")
+		.attr("transform", function(d) { return d.angle > Math.PI ? "rotate(180)translate(-16)" : null; })
+		.style("text-anchor", function(d) { return d.angle > Math.PI ? "end" : null; })
+		.text(function(d) { return d.label; });
+
+	svg.append("g")
+		.attr("class", "chord")
+		.selectAll("path")
+		.data(chord.chords)
+		.enter().append("path")
+		.attr("d", d3.svg.chord().radius(innerRadius))
+		.style("fill", function(d) { return fill(d.target.index); })
+		.style("opacity", 1);
+
+// Returns an array of tick angles and labels, given a group.
+function groupTicks(d) {
+  var k = (d.endAngle - d.startAngle) / d.value;
+  return d3.range(0, d.value, 1000).map(function(v, i) {
+    return {
+      angle: v * k + d.startAngle,
+      label: i % 5 ? null : v / 1000 + "k"
+    };
+  });
+}
+
+// Returns an event handler for fading a given chord group.
+function fade(opacity) {
+  return function(g, i) {
+    svg.selectAll(".chord path")
+        .filter(function(d) { return d.source.index != i && d.target.index != i; })
+      .transition()
+        .style("opacity", opacity);
+  };
+}
+	
+})
+*/
+
+</script>
+<div>
+<h1>Download</h1>
+<ul>
+	<li><a href="{% url 'download_transition_matrix' %}">Transition matrix</a></li>
+	<li><a href="{% url 'download_song_phrases' %}">Song phrases</a></li>
+</ul>
+</div>
+<h1>Upload</h1>
+<ul>
+	<li><a href="upload/">Upload phrase sequence <acronym title="Tab Separated Value">TSV</acronym></a></li>
+</ul>
+</div>
+<script src="{% static 'js/markovchain-common.js' %}" charset="utf-8"></script>
 </body>
 </html>
