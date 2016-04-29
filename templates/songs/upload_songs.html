@@ -6,25 +6,38 @@
     <input type="submit" value="Upload File" />
 </form>
 
+{% if required_fields %}
+<p>Fields for {{ area_and_season }}:</p>
 <form action="/songs/upload/review" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
 <ul>
 {% for field in required_fields %}
 	<li>
 		<select name="{{ field.0 }}">
 		{% for header in headers %}
-			<option value="{{ header }}">{{ header }}</option>
+			<option value="{{ header }}"
+				{% if field.0 == 'songphrase-time_begin' and forloop.counter == 1 %}selected="selected"
+				{% elif field.0 == 'songphrase-time_end' and forloop.counter == 2 %}selected="selected"
+				{% elif field.0 == 'song-phrases' and forloop.counter == 6 %}selected="selected"
+				{% elif field.0 == 'song-singer' and forloop.counter == 7 %}selected="selected"
+				{% elif field.0 == 'song-time_begin-date' and forloop.counter == 9 %}selected="selected"
+				{% elif field.0 == 'song-time_begin-time' and forloop.counter == 10 %}selected="selected"
+				{% endif %}
+			>{{ header }}</option>
 		{% endfor %}
 		</select>
 		{{ field.1 }}
 	</li>
 {% endfor %}
 </ul>
+	<input type="hidden" name="area_and_season" value="{{ area_and_season }}" />
 	<input type="hidden" name="required_fields" value="{{ required_fields }}" />
 	<input type="hidden" name="datatable" value="{{ datatable }}" />
 	<input type="hidden" name="headers" value="{{ headers }}" />
 	<input type="hidden" name="data" value="{{ data }}" />
-    <input type="submit" value="Submit Data" />
+    <input type="submit" value="Filter and process columns" />
 </form>
+{% endif %}
 
 <table>
 	<tr>
