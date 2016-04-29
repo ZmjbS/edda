@@ -70,9 +70,11 @@ def transition_matrix(songs, phrases=None):
 	# Move the Start to the start:
 	#print(all_phrases)
 	#print(type(all_phrases))
+	'''
 	newidx = 0
 	oldidx = all_phrases.index(Phrase.objects.get(name='Start'))
 	neworder[newidx] = oldidx
+	'''
 
 	# create a list of the order of the phrases:
 	'''
@@ -184,43 +186,16 @@ def phrases_to_json(request):
 	#return JsonResponse({'phrase': 'test', })#, safe=False)
 	#return JsonResponse(serializers.serialize('json', phrases), safe=False)
 
-#def display_file(file):
-#	import csv, datetime
-#	from dateutil import parser
-#	with open('tmp.txt', 'wb+') as destination:
-#		for chunk in file.chunks():
-#			destination.write(chunk)
-#	with open('tmp.txt', 'r') as datafile:
-#		for data in csv.DictReader(datafile, delimiter='\t'):
-#			''' Loop through all the data and display for confirmation. '''
-#			#song_begin = datetime.datetime.strptime(data['Date']+'-'+data['TimeStart'], '%d.%m.%Y-%H:%M:%S.%f')
-#			# TODO: This hasn't been tested...:
-##			song_begin = parse(data['Date']+' '+data['TimeStart'])
-#			song_length = datetime.datetime.strptime(data['FileDur'],'%H:%M:%S')
-#			delta = timedelta(hours=song_length.hour, minutes=song_length.minute, seconds=song_length.second)
-#			song_end = song_begin + delta
-#			position = GEOSGeometry('POINT('+data['Lat']+', '+data['Long']+')')
-#
-#			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin, time_end=song_end, position=position)
-#
-#			''' Now look up the phrase and create the corresponding song phrase. '''
-#			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
-#			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
-#
-#			phrasenames = []
-#			phrasenames = data['PhrasesForDatabase'].split('->')
-#			for phrasename in phrasenames:
-#				phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
-#
-#				if len(phrasenames) == 1:
-#					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
-#				else:
-#					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
-#	return 'f'
-#	return render(request, 'songs/display_upload.html', { 'form': form })
-
-@csrf_exempt
 def upload_songs(request):
+
+	''' First and second stages of file upload. Firstly, this generates the
+	form and passes to templates/songs/upload_songs.html. Secondly receives the
+	filled-in form, loads the data in the data-file into a list and passes this
+	back to the same form to display the file contents (or upload a new file).
+
+	Third stage: upload_review()
+	Fourth stage: ???
+	'''
 
 	if request.method == 'POST':
 
@@ -283,17 +258,25 @@ def upload_songs(request):
 					for field in headers:
 						row.append(data[field])
 					datatable.append(row)
-			return render(request, 'songs/upload_songs.html', { 'headers': headers, 'required_fields': required_fields, 'data': datatable, 'form': form })
+			print(request.POST['area_and_season'])
+			return render(request, 'songs/upload_songs.html', { 'headers': headers, 'required_fields': required_fields, 'data': datatable, 'form': form, 'area_and_season': request.POST['area_and_season'] })
 
 		else:
 			print('form is invalid.')
 			return render(request, 'songs/upload_songs.html', { 'form': form })
 	else:
 		''' If the request isn't POST, we just return the upload interface. '''
-		return HttpResponseRedirect('/songs/upload/')
+		form = UploadFileForms()
+		return render(request, 'songs/upload_songs.html', { 'form': form })
+		#return HttpResponseRedirect('/songs/upload/')
 
-@csrf_exempt
 def upload_review(request):
+
+	''' The third stage of the file upload. Receives the data table along with headers, parses some of the data (times, transition phrases) and displays one last time before committing.
+
+	First and second stage: upload_songs()
+	Fourth stage: upload_save()
+	'''
 
 	form = UploadFileForms()
 	if request.method == 'POST':
@@ -371,6 +354,7 @@ def upload_review(request):
 
 		return_dict = {
 			'form': form,
+			'area_and_season': request.POST['area_and_season'],
 			'data': datatable,
 			'datatable_headers': datatable_headers,
 			'phrases': phrases,
@@ -382,28 +366,98 @@ def upload_review(request):
 		the upload form. '''
 		return HttpResponseRedirect('/songs/upload/')
 
-@csrf_exempt
-def upload_process(request):
+def upload_save(request):
 
-		''' Run through each line of the data-"file" and get or create the corresponding song. '''
-		#for row in request.POST['data']:
-			#print(row)
-#			song_begin = parse(data[headers['Date']]+' '+data['TimeStart'])
-#			song, created = Song.objects.get_or_create(soundfile=data['Begin File'], singer=data['Singer'], time_begin=song_begin)
-#
-#			''' Now look up the phrase and create the corresponding song phrase. '''
-#			phrase_begin = song_begin + datetime.timedelta(0,float(data['Begin Time (s)']))
-#			phrase_end =   song_begin + datetime.timedelta(0,float(data['End Time (s)']))
-#
-#			phrasenames = []
-#			phrasenames = data['PhrasesForDatabase'].split('->')
-#			for phrasename in phrasenames:
-#				phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
-#
-#				if len(phrasenames) == 1:
-#					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=False, time_begin=phrase_begin, time_end=phrase_end)
-#				else:
-#					sp, c = SongPhrase.objects.get_or_create(song=song, phrase=phrase, is_transition=True, time_begin=phrase_begin, time_end=phrase_end)
+	''' Fourth and final stage of file upload. Receives the data from
+	upload_review.html and then:
+
+	* gets or creates the song
+	* gets or creates the phrases
+	* gets or creates the song-phrases
+
+	Then finally redirects the user to a view that displays information on that
+	area_and_season.  '''
+
+	if request.method == 'POST':
+		area_and_season = request.POST['area_and_season']
+
+		import tempfile
+		with tempfile.TemporaryFile('w+t') as datafile:
+			''' Write the headers and data to the temporary datafile. '''
+			datafile.write('phrase_begin\tphrase_end\tphrases\tsinger\ttime_begin\n')
+			datafile.write(request.POST['data'].replace('}, {', '}\t{').replace('], [','\n')[2:-2])
+			datafile.seek(0)
+
+			import csv
+			''' Run through each line of the data-"file" and get or create the corresponding song. '''
+			for data in csv.DictReader(datafile, delimiter='\t'):
+
+				singer = eval(data['singer'])['contents']
+				song_begin = eval(data['time_begin'])['contents']
+				phrases = eval(data['phrases'])['contents']
+
+				print('SONG:::', area_and_season, singer, song_begin, '-----------')
+				song, created = Song.objects.get_or_create(
+					area_and_season=area_and_season,
+					singer=singer,
+					time_begin=song_begin,
+					)
+
+				phrase_begin = song_begin + datetime.timedelta(0,float(eval(data['phrase_begin'])['contents']))
+				phrase_end =   song_begin + datetime.timedelta(0,float(eval(data['phrase_end'])['contents']))
+
+				for phrasename in phrases:
+					print('Phrase::: ', phrases[0], len(phrases) != 1, phrase_begin, phrase_end)
+					phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
+					sp, c = SongPhrase.objects.get_or_create(
+						song=song,
+						phrase=phrase,
+						is_transition=len(phrases) == 1,
+						time_begin=phrase_begin,
+						time_end=phrase_end
+						)
+
+			print('done?')
+
+		return HttpResponseRedirect('/songs/area_and_season/'+area_and_season)
+
+def display_area_and_season(request, area_and_season):
+	print(area_and_season)
+	songs = Song.objects.filter(area_and_season=area_and_season)
+	#print(s)
+	#return_dict = {
+	#	'songs': s,
+	#}
+	#return render(request, 'songs/area_and_season.html', return_dict )
+	tm, phrases = transition_matrix(songs)
+	#print(tm)
+	#maximum = max([max(l) for l in tm])
+	maximum = 0
+	for rn, row in enumerate(tm):
+		for cn, cell in enumerate(row):
+			if rn != cn and cell > maximum:
+				maximum = cell
+
+	''' Create colourised output.'''
+	rgb = []
+	for row in tm:
+		rmax = max(row)
+		rgbrow = []
+		for cell in row:
+			if rmax == 0:
+				red=0
+				green=0
+				blue=255
+			else:
+				red=int(cell*255/rmax)
+				green=int(cell*255/maximum)
+				blue=int(255-cell*255/rmax)
+			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
+		rgb.append(rgbrow)
+
+	#phrases = Phrase.objects.all()
+
+	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
 
 def download_tm(request):
 	## Range A
