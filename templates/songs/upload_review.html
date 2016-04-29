@@ -1,14 +1,21 @@
 <html>
 <body>
-<form action="/songs/upload/" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form }}
-    <input type="submit" value="Re-upload file" />
-</form>
 
+<p>Phrases found in the song upload file:</p>
 {% for phrase in phrases %}
 <span style="background: #ddd;">{{ phrase }}</span>,
 {% endfor %}
+
+<p>Please review the data table below if there are no errors (typos etc.) in the phrase list above before saving the data to the database.</p>
+
+<form action="/songs/upload/save" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+	<input type="hidden" name="area_and_season" value="{{ area_and_season }}" />
+	<input type="hidden" name="headers" value="{{ datatable_headers }}" />
+	<input type="hidden" name="data" value="{{ data }}" />
+    <input type="submit" value="Save data" />
+</form>
+
 <table>
 	<tr>
 {% for header in datatable_headers %}
