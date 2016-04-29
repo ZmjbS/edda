@@ -1,6 +1,5 @@
 from django import forms
 
 class UploadFileForms(forms.Form):
-	filename = forms.CharField(max_length=32)
-	#datetime = forms.DateTimeField()
+	area_and_season = forms.CharField(max_length=32)
 	file = forms.FileField()
