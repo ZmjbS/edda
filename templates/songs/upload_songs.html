@@ -1,5 +1,6 @@
-<html>
-<body>
+{% extends 'edda-base.html' %}
+
+{% block body %}
 <form action="/songs/upload/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form }}
@@ -53,5 +54,5 @@
 	</tr>
 {% endfor %}
 </table>
-</body>
-</html>
+
+{% endblock %}

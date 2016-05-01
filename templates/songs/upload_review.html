@@ -1,5 +1,6 @@
-<html>
-<body>
+{% extends 'edda-base.html' %}
+
+{% block body %}
 
 <p>Phrases found in the song upload file:</p>
 {% for phrase in phrases %}
@@ -34,5 +35,5 @@
 	</tr>
 {% endfor %}
 </table>
-</body>
-</html>
+
+{% endblock %}

@@ -1,101 +1,20 @@
+{% extends 'edda-base.html' %}
 {% load staticfiles %}
-<html>
-<head>
-<style>
-table { border-collapse: collapse; }
-td, th { min-width: 1.4em !important; max-width: 1.4em !important; height: 1.4em; overflow: hidden; }
-td { text-align: center; }
-th:first-child { text-align: right; max-width: 100px !important; }
-th { background-color: #008; color: lightblue; }
-/* Chord CSS 
-.chord path {
-  fill-opacity: .67;
-  stroke: #000;
-  stroke-width: .5px;
-} */
 
-.bar {
-	fill: steelblue;
-	shape-rendering: crispEdges;
-}
-.axis path, .axis line {
-	fill: none;
-	stroke: #000;
-	shape-rendering: crispEdges;
-}
-
-.chart rect {
-  fill: steelblue;
-}
-
-.chart text {
-  /*fill: white;*/
-  fill: darkblue;
-  font: 10px sans-serif;
-  /*text-anchor: end;*/
-}
-
-</style>
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/transition_matrix.css' %}">
 <script src="http://d3js.org/d3.v3.js"></script>
 <!-- Markov chain diagram -->
 <script src="{% static 'js/markovchain-vector.js' %}" charset="utf-8"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.9/angular.min.js"></script>
-<style>
-body {
-  background-color: none;
-  color: #333;
-}
-.controls {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-}
-.st-diagram {
-  pointer-events: none;
-  position: absolute;
-  left: 0;
-  width: 100%;
-  z-index: 1;
-}
-.st-diagram .nodes {
-  pointer-events: all;
-}
-.matrixInput {
-  display: block;
-  height: 100%;
-  width: 50%;
-  right: 0;
-  position: absolute;
-}
-.matrixInput textarea{
-  border: none;
-  background-color: rgba(0, 0, 0, 0.2);
-  color: red;
-  width: 100%;
-  height: 100%;
-  font-size: 20px;
-  outline: none;
-}
-.matrixInput textarea.valid {
-  color: inherit;
-}
-.matrix table {
-  width: 100%;
-  height: 100%;
-  text-align: center;
-  table-layout: fixed;
-}
-.matrix table td {
-  width: 33.33%;
-}
-.matrix table td input {
-  pointer-events: all;
-  width: 80%;
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/markov_chain.css' %}">
+{% endblock %}
+
 </head>
-<body ng-app="myApp" ng-controller="MainCtrl">
-<table style="float:left; max-width: calc(100% - 12em);">
+
+<!--<body ng-app="myApp" ng-controller="MainCtrl">-->
+{% block body %}
+<table class="transition_matrix" style="float:left; max-width: calc(100% - 12em);">
 <tr>
 	<th></th>
 	{% for phrase in phrases %}
@@ -417,5 +336,5 @@ function fade(opacity) {
 </ul>
 </div>
 <script src="{% static 'js/markovchain-common.js' %}" charset="utf-8"></script>
-</body>
-</html>
+
+{% endblock %}
