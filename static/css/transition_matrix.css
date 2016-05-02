@@ -1,0 +1,51 @@
+/* Transition matrix */
+
+table.transition_matrix { border-collapse: collapse; }
+table.transition_matrix tr td,
+table.transition_matrix tr th {
+	min-width: 1.4em !important;
+	max-width: 1.4em !important;
+	height: 1.4em;
+	overflow: hidden;
+}
+table.transition_matrix tr td {
+	text-align: center;
+}
+table.transition_matrix tr th:first-child {
+	text-align: right;
+	max-width: 100px !important;
+}
+table.transition_matrix tr th {
+	background-color: #008;
+	color: lightblue;
+}
+
+/* D3.js bars */
+
+/* Chord CSS 
+.chord path {
+  fill-opacity: .67;
+  stroke: #000;
+  stroke-width: .5px;
+} */
+
+.bar {
+	fill: steelblue;
+	shape-rendering: crispEdges;
+}
+.axis path, .axis line {
+	fill: none;
+	stroke: #000;
+	shape-rendering: crispEdges;
+}
+
+.chart rect {
+  fill: steelblue;
+}
+
+.chart text {
+  /*fill: white;*/
+  fill: darkblue;
+  font: 10px sans-serif;
+  /*text-anchor: end;*/
+}

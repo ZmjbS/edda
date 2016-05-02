@@ -1,0 +1,51 @@
+body {
+  background-color: none;
+  color: #333;
+}
+.controls {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+.st-diagram {
+  pointer-events: none;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  z-index: 1;
+}
+.st-diagram .nodes {
+  pointer-events: all;
+}
+.matrixInput {
+  display: block;
+  height: 100%;
+  width: 50%;
+  right: 0;
+  position: absolute;
+}
+.matrixInput textarea{
+  border: none;
+  background-color: rgba(0, 0, 0, 0.2);
+  color: red;
+  width: 100%;
+  height: 100%;
+  font-size: 20px;
+  outline: none;
+}
+.matrixInput textarea.valid {
+  color: inherit;
+}
+.matrix table {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  table-layout: fixed;
+}
+.matrix table td {
+  width: 33.33%;
+}
+.matrix table td input {
+  pointer-events: all;
+  width: 80%;
+}
