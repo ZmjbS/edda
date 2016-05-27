@@ -191,24 +191,35 @@ def upload_songs(request):
 	''' First and second stages of file upload. Firstly, this generates the
 	form and passes to templates/songs/upload_songs.html. Secondly receives the
 	filled-in form, loads the data in the data-file into a list and passes this
-	back to the same form to display the file contents (or upload a new file).
+	back to the same template to display the file contents (or upload a new
+	file).
 
 	Third stage: upload_review()
-	Fourth stage: ???
+	Fourth stage: upload_save()
 	'''
 
-	if request.method == 'POST':
+	if request.method != 'POST':
+
+		''' If the request isn't POST, we just return the upload interface. '''
+
+		form = UploadFileForms()
+		return render(request, 'songs/upload_songs.html', { 'form': form })
+
+	else:
 
 		''' If request is POST, we're receiving a file upload for pre-
 		processing (selecting headers etc.). If we confirm the pre-processed
 		file we send it for processing where it gets written into the database.
 		'''
 
-		print('is post')
+		print('upload_songs: is post')
 		form = UploadFileForms(request.POST, request.FILES)
 		print(form)
 
-		if form.is_valid():
+		if not form.is_valid():
+			print('form is invalid.')
+			return render(request, 'songs/upload_songs.html', { 'form': form })
+		else:
 			print('is valid')
 
 			''' Display form data for pre-processing and confirmation. '''
@@ -251,28 +262,32 @@ def upload_songs(request):
 
 				''' Generate a list of rows with the data to easily iterate
 				over and form a table with the data in the table. '''
-				datatable = []
+				rows = []
 				for data in csv.DictReader(datafile, delimiter='\t'):
-					print(data)
 					row = []
 					for field in headers:
 						row.append(data[field])
-					datatable.append(row)
-			print(request.POST['area_and_season'])
-			return render(request, 'songs/upload_songs.html', { 'headers': headers, 'required_fields': required_fields, 'data': datatable, 'form': form, 'area_and_season': request.POST['area_and_season'] })
+					rows.append(row)
 
-		else:
-			print('form is invalid.')
-			return render(request, 'songs/upload_songs.html', { 'form': form })
-	else:
-		''' If the request isn't POST, we just return the upload interface. '''
-		form = UploadFileForms()
-		return render(request, 'songs/upload_songs.html', { 'form': form })
-		#return HttpResponseRedirect('/songs/upload/')
+			return_dict= {
+				# The form and the area and season which the data is associated with:
+				'form': form,
+				'area_and_season': request.POST['area_and_season'],
+				# Headers and rows to construct the HTML table in the template:
+				'headers': headers,	# A list of all headers
+				'rows': rows,		# A list of all rows
+				# We need the required fields for the user to match the correct headers to.
+				'required_fields': required_fields,
+				# Now pass the data dictionary (this is for the view):
+				'data': data,
+				}
+			return render(request, 'songs/upload_songs.html', return_dict)
 
 def upload_review(request):
 
-	''' The third stage of the file upload. Receives the data table along with headers, parses some of the data (times, transition phrases) and displays one last time before committing.
+	''' The third stage of the file upload. Receives the data table along with
+	headers, parses some of the data (times, transition phrases) and displays
+	one last time before committing.
 
 	First and second stage: upload_songs()
 	Fourth stage: upload_save()
@@ -284,7 +299,7 @@ def upload_review(request):
 		''' We need to receive this by POST as we're doing changes to the database.
 		'''
 
-		print('is post')
+		print('upload_review: is post')
 
 		import csv, datetime
 		from dateutil import parser
@@ -292,9 +307,12 @@ def upload_review(request):
 
 		import tempfile
 		with tempfile.TemporaryFile('w+t') as datafile:
+			print('file open')
+			print(request.POST['headers'])
 			''' Write the headers and data to the temporary datafile. '''
 			datafile.write(request.POST['headers'].replace('\', \'', '\t').replace('\'], [\'','')[2:-2])
-			datafile.write(request.POST['data'].replace('\', \'', '\t').replace('\'], [\'','\n')[3:-3])
+			datafile.write('\n')
+			datafile.write(request.POST['rows'].replace('\', \'', '\t').replace('\'], [\'','\n')[3:-3])
 			datafile.seek(0)
 
 			''' Populate datatable_headers with the required headers from the
@@ -310,6 +328,7 @@ def upload_review(request):
 			datatable = []
 			phrases = []
 			for data in csv.DictReader(datafile, delimiter='\t'):
+				print(data)
 				''' Add the required fields from each row to the datatable. '''
 				row = []
 				for fieldname, fielddescription in ast.literal_eval(request.POST['required_fields']):
@@ -321,6 +340,9 @@ def upload_review(request):
 						''' Split the transition phrases up along the '->'
 						separators, strip them of surrounding spaces (these may
 						occur as typos), and turn them into a list.'''
+						print('here')
+						print(data)
+						print(data[request.POST['song-phrases']])
 						transition_phrase_list = list(map(str.strip, data[request.POST['song-phrases']].split('->')))
 						row.append({'contents': transition_phrase_list, 'type': 'list', })
 
