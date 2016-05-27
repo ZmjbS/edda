@@ -74,3 +74,6 @@ class SongPhrase(models.Model):
 	def duration(self):
 		''' Returns the duration of the song phrase. '''
 		return self.time_end - self.time_begin
+
+	def __str__(self):
+		return self.song.area_and_season + '-' + self.song.singer + ': ' + self.phrase.__str__()
