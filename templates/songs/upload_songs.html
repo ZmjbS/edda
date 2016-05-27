@@ -7,6 +7,9 @@
     <input type="submit" value="Upload File" />
 </form>
 
+{# If the required_fields variable is set then we're receiving data from the
+file rather than just displaying the upload form: #}
+
 {% if required_fields %}
 <p>Fields for {{ area_and_season }}:</p>
 <form action="/songs/upload/review" method="post" enctype="multipart/form-data">
@@ -31,14 +34,12 @@
 	</li>
 {% endfor %}
 </ul>
+	<input type="hidden" name="headers" value="{{ headers }}" />
+	<input type="hidden" name="rows" value="{{ rows }}" />
 	<input type="hidden" name="area_and_season" value="{{ area_and_season }}" />
 	<input type="hidden" name="required_fields" value="{{ required_fields }}" />
-	<input type="hidden" name="datatable" value="{{ datatable }}" />
-	<input type="hidden" name="headers" value="{{ headers }}" />
-	<input type="hidden" name="data" value="{{ data }}" />
     <input type="submit" value="Filter and process columns" />
 </form>
-{% endif %}
 
 <table>
 	<tr>
@@ -46,7 +47,7 @@
 	<th>{{ header }}</th>
 {% endfor %}
 	<tr>
-{% for row in data %}
+{% for row in rows %}
 	<tr>
 	{% for cell in row %}
 		<td>{{ cell }}</td>
@@ -54,5 +55,7 @@
 	</tr>
 {% endfor %}
 </table>
+
+{% endif %} {# END OF THE if NEAR THE TOP ---------------------------------- #}
 
 {% endblock %}
