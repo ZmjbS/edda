@@ -5,6 +5,8 @@ from .forms import UploadFileForms
 from django.views.decorators.csrf import csrf_exempt
 import numpy as np
 import datetime
+from django.http import JsonResponse
+from django.core import serializers
 
 def transition_matrix(songs, phrases=None):
 
@@ -104,30 +106,11 @@ def transition_matrix(songs, phrases=None):
 
 	return tm, all_phrases
 
-def display_song_stuff(request):
+def colour_matrix(tm):
 
-	songs = Song.objects.all()
-	## Range A
-	#range_begin = datetime.date(2011, 1,27)
-	#range_end = datetime.date(2011, 2, 2)
-	## Range B
-	#range_begin = datetime.date(2011, 2, 5)
-	#range_end = datetime.date(2011, 2, 10)
-	## Range C
-	#range_begin = datetime.date(2011, 2,18)
-	#range_end = datetime.date(2011, 2, 25)
-	## Range D
-	#range_begin = datetime.date(2011, 3, 2)
-	#range_end = datetime.date(2011, 3, 12)
-	#songs = Song.objects.filter(time_begin__range = (range_begin, range_end))
-	#print(songs)
+	''' Takes a transistion matrix from transition_matrix() as an argument and
+	returns a matrix of RGB values for better visualisation. '''
 
-	#all_phrases = list(Phrase.objects.all())
-	#phrases = all_phrases[0:0] + all_phrases[1:]
-	#tm = transition_matrix(songs, phrases)
-	tm, phrases = transition_matrix(songs)
-	print(tm)
-	#maximum = max([max(l) for l in tm])
 	maximum = 0
 	for rn, row in enumerate(tm):
 		for cn, cell in enumerate(row):
@@ -150,26 +133,39 @@ def display_song_stuff(request):
 				blue=int(255-cell*255/rmax)
 			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
 		rgb.append(rgbrow)
+	
+	return rgb
+	
 
-	#phrases = Phrase.objects.all()
+def display_song_stuff(request, area_and_season=None):
 
-	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
+	if not area_and_season == None:
+		songs = Song.objects.filter(area_and_season=area_and_season)
+	else:
+		songs = Song.objects.all()
+	tm, phrases = transition_matrix(songs)
+	rgb = colour_matrix(tm)
 
-def tm_to_json(request):
+	return render(request, 'songs/tm.html', {
+		'songs': songs,
+		'transition_matrix': tm,
+		'phrases': phrases,
+		'colour_matrix': rgb,
+		})
+
+def tm_to_json(request, area_and_season=None):
 	from django.http import JsonResponse
 	songs = Song.objects.all()
 	tm, phrases= transition_matrix(songs)
 	return JsonResponse(tm.tolist(), safe=False)
 
-def songs_to_json(request):
-	from django.http import JsonResponse
-	from django.core import serializers
+def songs_to_json(request, area_and_season=None):
 	songs = Song.objects.all()
 	#tm, phrases= transition_matrix(songs)
 	print(songs)
 	return JsonResponse(serializers.serialize('json', songs), safe=False)
 
-def phrases_to_json(request):
+def phrases_to_json(request, area_and_season=None):
 	from django.http import JsonResponse
 	from django.core import serializers
 	phrases = Phrase.objects.all()
@@ -236,6 +232,7 @@ def upload_songs(request):
 					bytestring to turn it into a text string before writing it
 					to datafile. '''
 					datafile.write(chunk.decode())
+					print('chunk decoding')
 					print(chunk.decode())
 				datafile.seek(0)
 
@@ -340,9 +337,9 @@ def upload_review(request):
 						''' Split the transition phrases up along the '->'
 						separators, strip them of surrounding spaces (these may
 						occur as typos), and turn them into a list.'''
-						print('here')
-						print(data)
-						print(data[request.POST['song-phrases']])
+						#print('here')
+						#print(data)
+						#print(data[request.POST['song-phrases']])
 						transition_phrase_list = list(map(str.strip, data[request.POST['song-phrases']].split('->')))
 						row.append({'contents': transition_phrase_list, 'type': 'list', })
 
@@ -357,6 +354,8 @@ def upload_review(request):
 						recording date and time in separate columns. We have to
 						merge these. '''
 						if fieldname == 'song-time_begin-date':
+							print('gaaah', data[request.POST['song-time_begin-date']])
+							print(data[request.POST['song-time_begin-time']])
 							row.append({
 								'contents': parser.parse(data[request.POST['song-time_begin-date']]+' '
 														+data[request.POST['song-time_begin-time']]),
@@ -443,44 +442,6 @@ def upload_save(request):
 
 		return HttpResponseRedirect('/songs/area_and_season/'+area_and_season)
 
-def display_area_and_season(request, area_and_season):
-	print(area_and_season)
-	songs = Song.objects.filter(area_and_season=area_and_season)
-	#print(s)
-	#return_dict = {
-	#	'songs': s,
-	#}
-	#return render(request, 'songs/area_and_season.html', return_dict )
-	tm, phrases = transition_matrix(songs)
-	#print(tm)
-	#maximum = max([max(l) for l in tm])
-	maximum = 0
-	for rn, row in enumerate(tm):
-		for cn, cell in enumerate(row):
-			if rn != cn and cell > maximum:
-				maximum = cell
-
-	''' Create colourised output.'''
-	rgb = []
-	for row in tm:
-		rmax = max(row)
-		rgbrow = []
-		for cell in row:
-			if rmax == 0:
-				red=0
-				green=0
-				blue=255
-			else:
-				red=int(cell*255/rmax)
-				green=int(cell*255/maximum)
-				blue=int(255-cell*255/rmax)
-			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
-		rgb.append(rgbrow)
-
-	#phrases = Phrase.objects.all()
-
-	return render(request, 'songs/tm.html', {'songs': songs, 'transition_matrix': tm, 'phrases': phrases, 'colour_matrix': rgb, })
-
 def download_tm(request):
 	## Range A
 	#range_begin = datetime.date(2011, 1,27)
@@ -497,6 +458,7 @@ def download_tm(request):
 	#songs = Song.objects.filter(time_begin__range = (range_begin, range_end))
 
 	songs = Song.objects.all()
+	songs = Song.objects.filter(area_and_season='Cape Verde 2012')
 
 	tm, phrases = transition_matrix(songs)
 	#phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
@@ -525,6 +487,7 @@ def download_song_phrases(request):
 	#songs = Song.objects.filter(time_begin__range = (range_begin, range_end))
 
 	songs = Song.objects.all()
+	songs = Song.objects.filter(area_and_season='Cape Verde 2012')
 
 	#tm, phrases = transition_matrix(songs)
 	#phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
@@ -533,7 +496,7 @@ def download_song_phrases(request):
 	songlist = []
 	maxphrases = 0
 	for song in songs:
-		phrasestring = song.soundfile+'-'+song.singer
+		phrasestring = song.area_and_season+'-'+song.singer
 		for sp in song.songphrase_set.all():
 			# Removes repetitions:
 			if not sp.phrase.name == phrasestring.split('\t')[-1]:
