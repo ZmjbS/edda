@@ -43,7 +43,7 @@
 </svg>
 <script>
 
-d3.json("{% url 'phrases_to_json' %}",function(error,json){
+d3.json("{% url 'phrases_to_json' %}{% if area_and_season %}{{ area_and_season|urlencode }}{% endif %}",function(error,json){
 	data = json
 	//data = JSON.parse(json);
 	//console.log(data)
@@ -157,7 +157,7 @@ var svg = d3.select("body")
 		  .append("g")
 		  .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.json("{% url 'songs_to_json' %}",function(error,json){
+d3.json("{% url 'songs_to_json' %}{% if area_and_season %}{{ area_and_season|urlencode }}{% endif %}",function(error,json){
 	// We receive the json as a string so we must parse it to a JSON object.
 	data = JSON.parse(json);
 
@@ -326,8 +326,8 @@ function fade(opacity) {
 <div>
 <h1>Download</h1>
 <ul>
-	<li><a href="{% url 'download_transition_matrix' %}">Transition matrix</a></li>
-	<li><a href="{% url 'download_song_phrases' %}">Song phrases</a></li>
+	<li><a href="{% url 'download_transition_matrix' %}{% if area_and_season %}{{ area_and_season|urlencode }}{% endif %}">Transition matrix</a></li>
+	<li><a href="{% url 'download_song_phrases' %}{% if area_and_season %}{{ area_and_season|urlencode }}{% endif %}">Song phrases</a></li>
 </ul>
 </div>
 <h1>Upload</h1>
