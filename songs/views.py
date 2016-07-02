@@ -443,25 +443,12 @@ def upload_save(request):
 		return HttpResponseRedirect('/songs/area_and_season/'+area_and_season)
 
 def download_tm(request):
-	## Range A
-	#range_begin = datetime.date(2011, 1,27)
-	#range_end = datetime.date(2011, 2, 2)
-	## Range B
-	#range_begin = datetime.date(2011, 2, 5)
-	#range_end = datetime.date(2011, 2, 10)
-	## Range C
-	#range_begin = datetime.date(2011, 2,18)
-	#range_end = datetime.date(2011, 2, 25)
-	## Range D
-	#range_begin = datetime.date(2011, 3, 2)
-	#range_end = datetime.date(2011, 3, 12)
-	#songs = Song.objects.filter(time_begin__range = (range_begin, range_end))
 
 	songs = Song.objects.all()
 	songs = Song.objects.filter(area_and_season='Cape Verde 2012')
 
 	tm, phrases = transition_matrix(songs)
-	#phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
+	
 	phrases = '\t'.join([ p.name for p in phrases ])
 	print(phrases)
 	with open('tmp.txt', 'wb+') as destination:
@@ -472,27 +459,10 @@ def download_tm(request):
 	return response
 
 def download_song_phrases(request):
-	## Range A
-	#range_begin = datetime.date(2011, 1,27)
-	#range_end = datetime.date(2011, 2, 2)
-	## Range B
-	#range_begin = datetime.date(2011, 2, 5)
-	#range_end = datetime.date(2011, 2, 10)
-	## Range C
-	#range_begin = datetime.date(2011, 2,18)
-	#range_end = datetime.date(2011, 2, 25)
-	## Range D
-	#range_begin = datetime.date(2011, 3, 2)
-	#range_end = datetime.date(2011, 3, 12)
-	#songs = Song.objects.filter(time_begin__range = (range_begin, range_end))
 
 	songs = Song.objects.all()
 	songs = Song.objects.filter(area_and_season='Cape Verde 2012')
 
-	#tm, phrases = transition_matrix(songs)
-	#phrases = '\t'.join([ p.name for p in Phrase.objects.all() ])
-	#phrases = '\t'.join([ p.name for p in phrases ])
-	#print(phrases)
 	songlist = []
 	maxphrases = 0
 	for song in songs:
