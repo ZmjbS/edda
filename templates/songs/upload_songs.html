@@ -1,16 +1,27 @@
 {% extends 'edda-base.html' %}
 
 {% block body %}
+<p>Instructions:</p>
+<ol>
+	<li>Enter a descriptive token to identify the area and season where and when the recordings in the song file were made. Example: <code>Skjálfandi 2016 P3</code>, for recordings in the 3rd period of the 2016 season in Skjálfandi Bay.</li>
+	<li>Find the file you wish to upload and press Upload File.</li>
+</ol>
+
 <form action="/songs/upload/" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form }}
     <input type="submit" value="Upload File" />
 </form>
 
-{# If the required_fields variable is set then we're receiving data from the
-file rather than just displaying the upload form: #}
+{# If the required_fields variable is set then we're receiving data from the #}
+{# file rather than just displaying the upload form: #}
 
 {% if required_fields %}
+<p>Instructions:</p>
+<ol>
+	<li>Match the database fields with the file table headers.</li>
+</ol>
+
 <p>Fields for {{ area_and_season }}:</p>
 <form action="/songs/upload/review" method="post" enctype="multipart/form-data">
     {% csrf_token %}
