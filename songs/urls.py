@@ -15,17 +15,17 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
-from songs.views import display_song_stuff, upload_songs, upload_review, upload_save, tm_to_json, download_tm, songs_to_json, download_song_phrases, phrases_to_json, display_area_and_season
+from songs.views import display_song_stuff, upload_songs, upload_review, upload_save, tm_to_json, download_tm, songs_to_json, download_song_phrases, phrases_to_json
 
 urlpatterns = [
     url(r'^$', display_song_stuff),
-    url(r'^upload/$', upload_songs),
-    url(r'^upload/review$', upload_review),
-    url(r'^upload/save$', upload_save),
-    url(r'^area_and_season/(?P<area_and_season>.*)$', display_area_and_season),
+    url(r'^area_and_season/(?P<area_and_season>.*)$', display_song_stuff),
     url(r'^api/tm/$', tm_to_json, name='tm_to_json'),
     url(r'^api/songs/$', songs_to_json, name='songs_to_json'),
     url(r'^api/phrases/$', phrases_to_json, name='phrases_to_json'),
 	url(r'^api/download/tm$', download_tm, name='download_transition_matrix'),
 	url(r'^api/download/song_phrases$', download_song_phrases, name='download_song_phrases'),
+    url(r'^upload/$', upload_songs),
+    url(r'^upload/review$', upload_review),
+    url(r'^upload/save$', upload_save),
 ]
