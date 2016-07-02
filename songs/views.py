@@ -28,6 +28,7 @@ def transition_matrix(songs, phrases=None):
 	tm = np.zeros( (tm_size, tm_size) , dtype="int64")
 
 	print(len(all_phrases))
+
 	''' Iterate through the songs and add the phrase transitions to the matrix. '''
 	for song in songs:
 		phrase_list = list(song.phrases.all())
@@ -98,11 +99,17 @@ def transition_matrix(songs, phrases=None):
 	#tm = tm[:,neworder]
 	#all_phrases = [ all_phrases[i] for i in neworder ]
 
-	old_err_state = np.seterr(divide='raise')
-	ignored_states = np.seterr(**old_err_state)
-	percentages = np.divide(tm,phrase_totals)
+#	old_err_state = np.seterr(divide='raise')
+#	ignored_states = np.seterr(**old_err_state)
+#	percentages = np.divide(tm,phrase_totals)
 
-	print(percentages)
+	""" ignore / 0, div0( [-1, 0, 1], 0 ) -> [0, 0, 0] """
+	#with np.errstate(divide='ignore', invalid='ignore'):
+		#percentages = np.true_divide( tm, phrase_totals )
+		#percentages[ ~ np.isfinite( percentages )] = 0  # -inf inf NaN
+#
+	#print(percentages)
+#	print(percentages)
 
 	return tm, all_phrases
 
@@ -139,10 +146,11 @@ def colour_matrix(tm):
 
 def display_song_stuff(request, area_and_season=None):
 
-	if not area_and_season == None:
+	if area_and_season != None:
 		songs = Song.objects.filter(area_and_season=area_and_season)
 	else:
 		songs = Song.objects.all()
+
 	tm, phrases = transition_matrix(songs)
 	rgb = colour_matrix(tm)
 
@@ -151,36 +159,52 @@ def display_song_stuff(request, area_and_season=None):
 		'transition_matrix': tm,
 		'phrases': phrases,
 		'colour_matrix': rgb,
+		'area_and_season': area_and_season,
 		})
 
 def tm_to_json(request, area_and_season=None):
-	from django.http import JsonResponse
-	songs = Song.objects.all()
+
+	if area_and_season != None:
+		songs = Song.objects.filter(area_and_season=area_and_season)
+	else:
+		songs = Song.objects.all()
+
 	tm, phrases= transition_matrix(songs)
 	return JsonResponse(tm.tolist(), safe=False)
 
 def songs_to_json(request, area_and_season=None):
-	songs = Song.objects.all()
-	#tm, phrases= transition_matrix(songs)
-	print(songs)
+
+	if area_and_season != None:
+		songs = Song.objects.filter(area_and_season=area_and_season)
+	else:
+		songs = Song.objects.all()
+
 	return JsonResponse(serializers.serialize('json', songs), safe=False)
 
 def phrases_to_json(request, area_and_season=None):
-	from django.http import JsonResponse
-	from django.core import serializers
-	phrases = Phrase.objects.all()
+
+	if area_and_season != None:
+		phrases = Phrase.objects.filter(songs__area_and_season=area_and_season).distinct()
+	else:
+		phrases = Phrase.objects.all().distinct()
+
 	phrase_info = []
 	for phrase in phrases:
-		print(phrase.name, phrase.count())
-		phrase_info.append({ 'phrase': phrase.name, 'count': phrase.count(), 'durations': str(phrase.durations()), })
-	#	print(phrase_info)
-	print(phrase_info)
-	#return JsonResponse(serializers.serialize('json', phrase_info), safe=False)
+		if area_and_season != None:
+			occurances = SongPhrase.objects.filter(
+				song__area_and_season=area_and_season,
+				phrase=phrase,
+				is_transition=True, # TODO: Do we want only the transition ones or do we want it all?
+				).count()
+		else:
+			occurances = phrase.count()
+		phrase_info.append({
+			'phrase': phrase.name,
+			'count': occurances,
+			'durations': str(phrase.durations()),
+			})
+		print(phrase, occurances)
 	return JsonResponse(phrase_info, safe=False)
-	#return JsonResponse(phrase_info)
-	#return JsonResponse(serializers.serialize('json', phrases), safe=False)
-	#return JsonResponse({'phrase': 'test', })#, safe=False)
-	#return JsonResponse(serializers.serialize('json', phrases), safe=False)
 
 def upload_songs(request):
 
@@ -208,15 +232,15 @@ def upload_songs(request):
 		file we send it for processing where it gets written into the database.
 		'''
 
-		print('upload_songs: is post')
+#		print('upload_songs: is post')
 		form = UploadFileForms(request.POST, request.FILES)
-		print(form)
+#		print(form)
 
 		if not form.is_valid():
-			print('form is invalid.')
+			print('form is invalid: Return the upload interface.')
 			return render(request, 'songs/upload_songs.html', { 'form': form })
 		else:
-			print('is valid')
+			print('is valid: display form data for pre-processing and confirmation')
 
 			''' Display form data for pre-processing and confirmation. '''
 
@@ -232,8 +256,8 @@ def upload_songs(request):
 					bytestring to turn it into a text string before writing it
 					to datafile. '''
 					datafile.write(chunk.decode())
-					print('chunk decoding')
-					print(chunk.decode())
+#					print('chunk decoding')
+#					print(chunk.decode())
 				datafile.seek(0)
 
 				''' These are the fields that we need to be able to populate
@@ -296,7 +320,7 @@ def upload_review(request):
 		''' We need to receive this by POST as we're doing changes to the database.
 		'''
 
-		print('upload_review: is post')
+#		print('upload_review: is post')
 
 		import csv, datetime
 		from dateutil import parser
@@ -304,8 +328,8 @@ def upload_review(request):
 
 		import tempfile
 		with tempfile.TemporaryFile('w+t') as datafile:
-			print('file open')
-			print(request.POST['headers'])
+#			print('file open')
+#			print(request.POST['headers'])
 			''' Write the headers and data to the temporary datafile. '''
 			datafile.write(request.POST['headers'].replace('\', \'', '\t').replace('\'], [\'','')[2:-2])
 			datafile.write('\n')
@@ -325,7 +349,7 @@ def upload_review(request):
 			datatable = []
 			phrases = []
 			for data in csv.DictReader(datafile, delimiter='\t'):
-				print(data)
+#				print(data)
 				''' Add the required fields from each row to the datatable. '''
 				row = []
 				for fieldname, fielddescription in ast.literal_eval(request.POST['required_fields']):
@@ -354,8 +378,8 @@ def upload_review(request):
 						recording date and time in separate columns. We have to
 						merge these. '''
 						if fieldname == 'song-time_begin-date':
-							print('gaaah', data[request.POST['song-time_begin-date']])
-							print(data[request.POST['song-time_begin-time']])
+#							print('gaaah', data[request.POST['song-time_begin-date']])
+#							print(data[request.POST['song-time_begin-time']])
 							row.append({
 								'contents': parser.parse(data[request.POST['song-time_begin-date']]+' '
 														+data[request.POST['song-time_begin-time']]),
@@ -417,7 +441,7 @@ def upload_save(request):
 				song_begin = eval(data['time_begin'])['contents']
 				phrases = eval(data['phrases'])['contents']
 
-				print('SONG:::', area_and_season, singer, song_begin, '-----------')
+#				print('SONG:::', area_and_season, singer, song_begin, '-----------')
 				song, created = Song.objects.get_or_create(
 					area_and_season=area_and_season,
 					singer=singer,
@@ -428,7 +452,7 @@ def upload_save(request):
 				phrase_end =   song_begin + datetime.timedelta(0,float(eval(data['phrase_end'])['contents']))
 
 				for phrasename in phrases:
-					print('Phrase::: ', phrases[0], len(phrases) != 1, phrase_begin, phrase_end)
+#					print('Phrase::: ', phrases[0], len(phrases) != 1, phrase_begin, phrase_end)
 					phrase, created = Phrase.objects.get_or_create(name=phrasename.strip())
 					sp, c = SongPhrase.objects.get_or_create(
 						song=song,
@@ -438,30 +462,38 @@ def upload_save(request):
 						time_end=phrase_end
 						)
 
-			print('done?')
+#			print('done?')
 
 		return HttpResponseRedirect('/songs/area_and_season/'+area_and_season)
 
-def download_tm(request):
+def download_tm(request, area_and_season=None):
 
-	songs = Song.objects.all()
-	songs = Song.objects.filter(area_and_season='Cape Verde 2012')
+	if area_and_season != None:
+		songs = Song.objects.filter(area_and_season=area_and_season)
+		filename = 'edda_transition_matrix-'+area_and_season+'.txt'
+	else:
+		songs = Song.objects.all()
+		filename = 'edda_transition_matrix.txt'
 
 	tm, phrases = transition_matrix(songs)
 	
 	phrases = '\t'.join([ p.name for p in phrases ])
-	print(phrases)
+
 	with open('tmp.txt', 'wb+') as destination:
 		np.savetxt(destination, tm, fmt='%i', delimiter='\t', header=phrases)
 	with open('tmp.txt', 'rb+') as destination:
 		response = HttpResponse(destination, content_type='text/plain')
-	response['Content-disposition'] = 'attachment; filename="prufa.txt"'
+	response['Content-disposition'] = 'attachment; filename="'+filename+'"'
 	return response
 
-def download_song_phrases(request):
+def download_song_phrases(request, area_and_season=None):
 
-	songs = Song.objects.all()
-	songs = Song.objects.filter(area_and_season='Cape Verde 2012')
+	if area_and_season != None:
+		songs = Song.objects.filter(area_and_season=area_and_season)
+		filename = 'edda_song_phrases-'+area_and_season+'.txt'
+	else:
+		songs = Song.objects.all()
+		filename = 'edda_song_phrases.txt'
 
 	songlist = []
 	maxphrases = 0
@@ -472,7 +504,7 @@ def download_song_phrases(request):
 			if not sp.phrase.name == phrasestring.split('\t')[-1]:
 				phrasestring += '\t'+sp.phrase.name
 			#print(phrasestring.split('\t')[-1])
-			print(phrasestring)
+#			print(phrasestring)
 		phrases = phrasestring.count('\t')
 		if phrases > maxphrases:
 			maxphrases = phrases
@@ -485,5 +517,5 @@ def download_song_phrases(request):
 		np.savetxt(destination, songlist, fmt="%s", delimiter='\t', header=header)
 	with open('tmp.txt', 'rb+') as destination:
 		response = HttpResponse(destination, content_type='text/plain')
-	response['Content-disposition'] = 'attachment; filename="prufa.txt"'
+	response['Content-disposition'] = 'attachment; filename="'+filename+'"'
 	return response
