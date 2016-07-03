@@ -124,6 +124,7 @@ def colour_matrix(tm):
 			if rn != cn and cell > maximum:
 				maximum = cell
 
+	from songs.colormaps import _viridis_data as cmap
 	''' Create colourised output.'''
 	rgb = []
 	for row in tm:
@@ -134,10 +135,17 @@ def colour_matrix(tm):
 				red=0
 				green=0
 				blue=255
+				(red, green, blue) = (int(cmap[0][0]*255),int(cmap[0][1]*255),int(cmap[0][2]*255))
 			else:
-				red=int(cell*255/rmax)
-				green=int(cell*255/maximum)
-				blue=int(255-cell*255/rmax)
+				#red=int(cell*255/rmax)
+				#green=int(cell*255/maximum)
+				#blue=int(255-cell*255/rmax)
+				temp=rmax
+				temp=maximum
+				red=int(cmap[int(cell*255/temp)][0]*255)
+				green=int(cmap[int(cell*255/temp)][1]*255)
+				blue=int(cmap[int(cell*255/temp)][2]*255)
+				print(red, green, blue)
 			rgbrow.append('rgb('+str(red)+','+str(green)+','+str(blue)+')')
 		rgb.append(rgbrow)
 	
